@@ -17,10 +17,10 @@ fi
 
 inputName="test";
 if [ "${suite}" == "SPEC2017" ] ; then
-  inputName="ref" ;
+  inputName="test" ;
 fi
 if [ "${suite}" == "PARSEC3" ] ; then
-  inputName="native" ;
+  inputName="simsmall" ;
 fi
 
 REPO_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )" ;
