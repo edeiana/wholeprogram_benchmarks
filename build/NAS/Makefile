@@ -1,4 +1,4 @@
-TAR=/project/benchmarks/NAS.tgz
+TAR=~/benchmarkSuites/NAS.tgz
 BENCHMARK=all
 
 all: baseline_code_generation

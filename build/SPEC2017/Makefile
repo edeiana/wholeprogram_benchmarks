@@ -1,4 +1,4 @@
-TAR=/project/benchmarks/SPEC2017.tar.gz
+TAR=~/benchmarkSuites/SPEC2017.tar.gz
 INPUT=test #test, train, ref
 VERSION=rate #speed, rate
 BENCHMARK=all #mcf_r, lbm_s, xz_r, ...

@@ -1,0 +1,65 @@
+#!/bin/bash
+
+numOfInputs=3 ;
+if test $# -lt ${numOfInputs} ; then
+  echo "USAGE: $ `basename $0` suite experiment benchmark" ;
+  exit 1 ;
+fi
+
+suite="$1" ;
+experiment="$2" ;
+benchmarkToRun="$3" ;
+machine="`uname -n`" ;
+numOfRuns="3" ; # default
+if [ "${CARMOT_NUM_RUNS}" != "" ] ; then
+ numOfRuns="${CARMOT_NUM_RUNS}" ;
+fi
+
+inputName="test";
+if [ "${suite}" == "SPEC2017" ] ; then
+  inputName="ref" ;
+fi
+if [ "${suite}" == "PARSEC3" ] ; then
+  inputName="native" ;
+fi
+
+REPO_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )" ;
+
+benchmarkSuite=${REPO_PATH}/build/${suite} ;
+experimentDir=${benchmarkSuite}/${machine}/${experiment} ;
+mkdir -p ${experimentDir} ;
+
+benchmarks=${REPO_PATH}/build/${suite}/benchmarks ;
+if [ "${benchmarkToRun}" == "all" ] ; then
+  benchmarksToRun=("`ls ${benchmarks}`") ;
+else
+  benchmarksToRun=("${benchmarkToRun}") ;
+fi
+
+for benchmark in ${benchmarksToRun[@]} ; do
+  benchmarkBin=${benchmarks}/${benchmark}/${benchmark} ;
+  if ! test -e ${benchmarkBin} ; then
+    echo "WARNING: ${benchmarkBin} not found" ;
+    continue ;
+  fi
+
+  timeFile="times_${benchmark}.txt" ;
+  pathToTimeFile="${experimentDir}/${timeFile}" ;
+  #if test -e ${pathToTimeFile} ; then
+    #echo "WARNING: ${pathToTimeFile} already exists" ;
+    #continue ;
+  #fi
+  
+  cd ${benchmarkSuite} ;
+  rm -f ${timeFile} ; # Remove previous files
+  ./condor/scripts/run.sh ${inputName} ${benchmark} ${numOfRuns} ${timeFile} ;
+  mv ${timeFile} ${experimentDir}/ ;
+
+  # Copy output file
+  outputFile="${benchmarkSuite}/benchmarks/${benchmark}/${benchmark}_${inputName}_output.txt" ;
+  if ! test -e ${outputFile} ; then
+    echo "WARNING: output file ${outputFile} not found. Continue." ;
+    continue ;
+  fi
+  cp ${outputFile} ${experimentDir}/ ;
+done

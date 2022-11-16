@@ -1,0 +1,16 @@
+#!/bin/bash
+
+numOfInputs=1 ;
+if test $# -lt ${numOfInputs} ; then
+  echo "USAGE: $ `basename $0` suite" ;
+  exit 1 ;
+fi
+
+suite="$1" ;
+
+REPO_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )" ;
+
+cd ${REPO_PATH}/build/${suite} ;
+make clean ;
+make uninstall ;
+make ;

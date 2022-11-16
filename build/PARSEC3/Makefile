@@ -1,4 +1,4 @@
-TAR=/project/benchmarks/parsec-3.0.tar.gz
+TAR=~/benchmarkSuites/parsec-3.0.tar.gz
 BENCHMARK=all
 INPUT=test
 

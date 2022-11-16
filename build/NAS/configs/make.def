@@ -94,7 +94,7 @@ C_INC = -I../common
 #---------------------------------------------------------------------------
 # Global *compile time* flags for C programs
 #---------------------------------------------------------------------------
-CFLAGS	= -g -O1 -Xclang -disable-llvm-passes
+CFLAGS	= -g -O3 -mcmodel=large -march=native
 # CFLAGS = -g
 
 #---------------------------------------------------------------------------
@@ -111,7 +111,7 @@ CLINKFLAGS = -lm -mcmodel=large
 # this compiler go here also; typically there are few flags required; hence 
 # there are no separate macros provided for such flags.
 #---------------------------------------------------------------------------
-UCC	= gclang -O
+UCC	= gclang -O -mcmodel=large
 
 
 #---------------------------------------------------------------------------

@@ -1,16 +1,12 @@
 #!/bin/bash
 
 # Fetch the inputs
-if test $# -lt 3 ; then
-  echo "USAGE: `basename $0` CONDOR_FILE FILE_PREFIX FILE_SUFFIX" ;
+if test $# -lt 1 ; then
+  echo "USAGE: `basename $0` CONDOR_FILE FILE_SUFFIX" ;
   exit 1;
 fi
 condorFile="$1" ;
-prefixName="$2" ;
-if test "$prefixName" == " " ; then
-  prefixName="" ;
-fi
-suffixName="$3" ;
+suffixName="$2" ;
 origDir=`pwd` ;
 
 # Instantiate the condor script
@@ -27,8 +23,7 @@ for i in `ls` ; do
   fi
 
   # Check if there is the bitcode
-  filesFound="`ls ${i}/${prefixName}*${suffixName} 2> /dev/null`"
-  if test "${filesFound}" == "" ; then
+  if ! test -e ${i}/${i}${suffixName} ; then
     continue ;
   fi
   echo "  Benchmark ${i} is added" ;

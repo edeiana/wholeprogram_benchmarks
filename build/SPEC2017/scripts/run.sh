@@ -6,8 +6,8 @@ function runBenchmark {
 		echo "Error: Run directory not found for \"${1}\". Please run \"./scripts/setup.sh ${inputsize} version\" where version = [rate, speed]"
 		exit
 	fi
-	if [ ! -f "${BENCHMARKS_DIR}/${1}/${1}_newbin" ]; then
-		echo "Warning: Binary \"${1}_newbin\" not found for \"${1}\", Skipping "
+	if [ ! -f "${BENCHMARKS_DIR}/${1}/${1}" ]; then
+		echo "Warning: Binary \"${1}\" not found for \"${1}\", Skipping "
 		return
 	fi
 	cd ${BENCHMARKS_DIR}/${1}/${inputsize}
@@ -17,10 +17,11 @@ function runBenchmark {
 	arguments="$( echo $lastline | awk -F${1} '{print $2}')"
 	echo "Running \"${1}\" with \"${1}_newbin ${arguments} >${1}_${inputsize}_output.txt\""
 	# ${BENCHMARKS_DIR}/${1}/${1}_newbin ${arguments} >${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt
-	# perf stat ../${1}_newbin ${arguments} >${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt
-	eval /usr/bin/time -p ../${1}_newbin ${arguments} 2>&1 >${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt ;
+  nthreads="1" ;
+  export OMP_NUM_THREADS=${nthreads} ;
+	perf stat ../${1} ${arguments} >${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt
   exitOutput=$? ;
-	echo `tail -n 2 ${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt`
+	echo `tail -n 1 ${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt`
 	echo "--------------------------------------------------------------------------------------"
 }
 
