@@ -19,6 +19,8 @@ function runBenchmark {
   commandToRunSplit="./${benchmarkArg}" ;
   echo "Running: ${commandToRunSplit} in ${PWD}" ;
   touch ./run_args.txt ;
+  nthreads="`grep -c ^processor /proc/cpuinfo`";
+  export OMP_NUM_THREADS=${nthreads} ;
   eval perf stat ${commandToRunSplit} > ${perfStatFile} ;
   if [ "$?" != 0 ] ; then
     echo "ERROR: run of ${commandToRunSplit} failed." ;

@@ -10,7 +10,7 @@ CXX="clang++" ;
 FLAGS="-O3" ;
 
 # Libraries
-LIBS="-lm -mcmodel=large -lstdc++ -lpthread" ;
+LIBS="-lm -mcmodel=large -lstdc++ -lpthread -fopenmp" ;
 
 # Additional libraries for lame benchmmark
 LIBS_EXTRA="" ;

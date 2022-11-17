@@ -46,7 +46,8 @@ function runBenchmark {
   fi
 
   # Get args to run binary with
-  NTHREADS=1 source ${pathToInputConf} ;
+  nthreads="`grep -c ^processor /proc/cpuinfo`";
+  NTHREADS=${nthreads} source ${pathToInputConf} ;
 
   # Run benchmark in benchmarks/${benchmark}/run dir
   perfStatFile="${pathToBenchmark}/${benchmarkArg}_${inputArg}_output.txt" ;

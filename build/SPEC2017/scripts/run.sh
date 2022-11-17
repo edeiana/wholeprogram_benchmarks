@@ -17,7 +17,7 @@ function runBenchmark {
 	arguments="$( echo $lastline | awk -F${1} '{print $2}')"
 	echo "Running \"${1}\" with \"${1}_newbin ${arguments} >${1}_${inputsize}_output.txt\""
 	# ${BENCHMARKS_DIR}/${1}/${1}_newbin ${arguments} >${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt
-  nthreads="1" ;
+  nthreads="`grep -c ^processor /proc/cpuinfo`" ;
   export OMP_NUM_THREADS=${nthreads} ;
 	perf stat ../${1} ${arguments} >${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt
   exitOutput=$? ;

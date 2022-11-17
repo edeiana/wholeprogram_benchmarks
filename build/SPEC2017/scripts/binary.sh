@@ -10,7 +10,7 @@ FLAGS="-O3"
 function genBinary {
 	# Libraries
 	
-	LIBS="-lm -mavx -z muldefs -Wno-return-type -lstdc++ -lpthread "
+	LIBS="-lm -mavx -z muldefs -Wno-return-type -lstdc++ -lpthread -fopenmp"
 	if [ ! -f "${BENCHMARKS_DIR}/${1}/${1}.bc" ]; then
 		echo "Warning: Bitcode not found for ${1}, skipping"
 		return
