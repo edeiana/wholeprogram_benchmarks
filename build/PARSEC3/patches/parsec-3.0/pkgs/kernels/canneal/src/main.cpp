@@ -27,6 +27,7 @@
 // OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 // SUCH DAMAGE.
 
+#include <omp.h>
 
 #include <iostream>
 #include <math.h>
@@ -76,10 +77,10 @@ int main (int argc, char * const argv[]) {
 	int num_threads = atoi(argv[1]);
 	cout << "Threadcount: " << num_threads << endl;
 #ifndef ENABLE_THREADS
-	if (num_threads != 1){
-		cout << "NTHREADS must be 1 (serial version)" <<endl;
-		exit(1);
-	}
+	//if (num_threads != 1){
+	//	cout << "NTHREADS must be 1 (serial version)" <<endl;
+	//	exit(1);
+	//}
 #endif
 		
 	//argument 2 is the num moves / temp
@@ -119,7 +120,12 @@ int main (int argc, char * const argv[]) {
 		pthread_join(threads[i], NULL);
 	}
 #else
-	a_thread.Run();
+  omp_set_dynamic(0);     // Explicitly disable dynamic teams
+  omp_set_num_threads(num_threads); // Use nThreads for all consecutive parallel regions
+  #pragma omp parallel for schedule(static, 1) 
+	for(int i=0; i<num_threads; i++){
+	  a_thread.Run();
+	}
 #endif
 #ifdef ENABLE_PARSEC_HOOKS
 	__parsec_roi_end();

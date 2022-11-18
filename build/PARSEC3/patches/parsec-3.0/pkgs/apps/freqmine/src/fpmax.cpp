@@ -54,11 +54,11 @@ using namespace std;
 
 #include "buffer.h"
 
-#ifdef _OPENMP
+//#ifdef _OPENMP
 #include <omp.h>
-#else
-static int omp_get_max_threads() {return 1;}
-#endif //_OPENMP
+//#else
+//static int omp_get_max_threads() {return 1;}
+//#endif //_OPENMP
 
 #ifdef ENABLE_PARSEC_HOOKS
 #include <hooks.h>

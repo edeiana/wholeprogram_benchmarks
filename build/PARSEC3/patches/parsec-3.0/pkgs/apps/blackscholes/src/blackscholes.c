@@ -25,9 +25,9 @@ MAIN_ENV
 #endif
 
 // Multi-threaded OpenMP header
-#ifdef ENABLE_OPENMP
+//#ifdef ENABLE_OPENMP
 #include <omp.h>
-#endif
+//#endif
 
 #ifdef ENABLE_TBB
 #include "tbb/blocked_range.h"
@@ -49,7 +49,7 @@ using namespace tbb;
 //Precision to use for calculations
 #define fptype float
 
-#define NUM_RUNS 1000
+#define NUM_RUNS 10000
 
 typedef struct OptionData_ {
         fptype s;          // spot price
@@ -282,13 +282,18 @@ int bs_thread(void *tid_ptr) {
     int start = tid * (numOptions / nThreads);
     int end = start + (numOptions / nThreads);
 
+    //#pragma omp parallel
+    //#pragma omp single
+//#pragma omp taskloop // replace other 3 pragmas
     for (j=0; j<NUM_RUNS; j++) {
-#ifdef ENABLE_OPENMP
+      //#pragma omp task
+      {
+//#ifdef ENABLE_OPENMP
 #pragma omp parallel for private(i, price, priceDelta)
         for (i=0; i<numOptions; i++) {
-#else  //ENABLE_OPENMP
-        for (i=start; i<end; i++) {
-#endif //ENABLE_OPENMP
+//#else  //ENABLE_OPENMP
+//        for (i=start; i<end; i++) {
+//#endif //ENABLE_OPENMP
             /* Calling main function to calculate option value based on 
              * Black & Scholes's equation.
              */
@@ -306,6 +311,7 @@ int bs_thread(void *tid_ptr) {
             }
 #endif
         }
+      }
     }
 
     return 0;
@@ -361,10 +367,10 @@ int main (int argc, char **argv)
     }
 
 #if !defined(ENABLE_THREADS) && !defined(ENABLE_OPENMP) && !defined(ENABLE_TBB)
-    if(nThreads != 1) {
-        printf("Error: <nthreads> must be 1 (serial version)\n");
-        exit(1);
-    }
+    //if(nThreads != 1) {
+    //    printf("Error: <nthreads> must be 1 (serial version)\n");
+    //    exit(1);
+    //}
 #endif
 
     // alloc spaces for the option data
@@ -459,8 +465,14 @@ int main (int argc, char **argv)
     bs_thread(&tid);
 #else //ENABLE_TBB
     //serial version
-    int tid=0;
-    bs_thread(&tid);
+    {
+        int tid=0;
+        omp_set_num_threads(nThreads);
+        bs_thread(&tid);
+    }
+
+    //int tid=0;
+    //bs_thread(&tid);
 #endif //ENABLE_TBB
 #endif //ENABLE_OPENMP
 #endif //ENABLE_THREADS

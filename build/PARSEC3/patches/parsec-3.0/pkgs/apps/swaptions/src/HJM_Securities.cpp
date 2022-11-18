@@ -4,6 +4,8 @@
 //Collaborator: Mikhail Smelyanskiy, Jike Chong, Intel
 //Modified by Christian Bienia for the PARSEC Benchmark Suite
 
+#include <omp.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -202,11 +204,13 @@ int main(int argc, char *argv[])
 	}
 
 #else
+  /*
 	if (nThreads != 1)
 	{
 		fprintf(stderr,"Number of threads must be 1 (serial version)\n");
 		exit(1);
 	}
+  */
 #endif //ENABLE_THREADS
 
         // initialize input dataset
@@ -304,8 +308,14 @@ int main(int argc, char *argv[])
 #endif // TBB_VERSION	
 
 #else
-	int threadID=0;
-	worker(&threadID);
+
+  omp_set_dynamic(0);     // Explicitly disable dynamic teams
+  omp_set_num_threads(nThreads); // Use nThreads for all consecutive parallel regions
+  #pragma omp parallel for schedule(static, 1)
+  for (auto threadID = 0; threadID < nThreads; ++threadID){
+	  worker(&threadID);
+  }
+
 #endif //ENABLE_THREADS
 
 #ifdef ENABLE_PARSEC_HOOKS
