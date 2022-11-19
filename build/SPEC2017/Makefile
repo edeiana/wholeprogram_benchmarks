@@ -7,7 +7,7 @@ all: baseline_code_generation
 
 optimized_code_generation: compile_all bitcode bitcode_copy setup optimization binary run
 
-baseline_code_generation: compile_all bitcode bitcode_copy setup binary
+baseline_code_generation: compile_all bitcode bitcode_copy setup
 
 SPEC2017:
 	tar -xf $(TAR)

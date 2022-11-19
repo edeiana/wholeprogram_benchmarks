@@ -1,0 +1,16 @@
+#!/bin/bash
+
+numOfInputs=3 ;
+if test $# -lt ${numOfInputs} ; then
+  echo "USAGE: $ `basename $0` suite tool benchmark" ;
+  exit 1 ;
+fi
+
+suite="$1" ;
+tool="$2" ;
+benchmark="$3" ;
+
+REPO_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )" ;
+
+cd ${REPO_PATH}/build/${suite} ;
+TOOL=${tool} make optimization BENCHMARK=${benchmark} ;

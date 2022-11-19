@@ -27,6 +27,7 @@
 // OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 // SUCH DAMAGE.
 
+#include "wrapper.hpp"
 
 #include <iostream>
 #include <math.h>
@@ -76,10 +77,10 @@ int main (int argc, char * const argv[]) {
 	int num_threads = atoi(argv[1]);
 	cout << "Threadcount: " << num_threads << endl;
 #ifndef ENABLE_THREADS
-	if (num_threads != 1){
-		cout << "NTHREADS must be 1 (serial version)" <<endl;
-		exit(1);
-	}
+	//if (num_threads != 1){
+	//	cout << "NTHREADS must be 1 (serial version)" <<endl;
+	//	exit(1);
+	//}
 #endif
 		
 	//argument 2 is the num moves / temp
@@ -119,7 +120,13 @@ int main (int argc, char * const argv[]) {
 		pthread_join(threads[i], NULL);
 	}
 #else
-	a_thread.Run();
+  uint64_t stateID = 0;
+	for(int i=0; i<num_threads; i++){
+    stateID = caratGetStateWrapper((char*)"Run", 64);
+	  a_thread.Run();
+    caratReportStateWrapper(stateID);
+	}
+  endStateInvocationWrapper(stateID);
 #endif
 #ifdef ENABLE_PARSEC_HOOKS
 	__parsec_roi_end();

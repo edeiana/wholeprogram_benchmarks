@@ -16,10 +16,16 @@ function runBenchmark {
 
   # Run benchmark in benchmarks/${benchmark}/run dir
   perfStatFile="${pathToBenchmark}/${benchmarkArg}_${inputArg}_output.txt" ;
-  commandToRunSplit="./${benchmarkArg}" ;
-  echo "Running: ${commandToRunSplit} in ${PWD}" ;
+  stderrFile="${pathToBenchmark}/${benchmarkArg}_${inputArg}_stderr.txt" ;
+  stdoutFile="${pathToBenchmark}/${benchmarkArg}_${inputArg}_stdout.txt" ;
+  rm -f ${perfStatFile} ;
+  rm -f ${stderrFile} ;
+  rm -f ${stdoutFile} ;
+  commandToRunSplit="memorytool-run ./${benchmarkArg}" ;
   touch ./run_args.txt ;
-  eval perf stat ${commandToRunSplit} > ${perfStatFile} ;
+  echo "Running: ${commandToRunSplit} in ${PWD}" ;
+  cmd="eval /usr/bin/time perf stat ${commandToRunSplit}" ;
+  ${cmd} 1> >(tee -a ${stdoutFile}) 2> >(tee -a ${stderrFile} >&2) > ${perfStatFile} ;
   if [ "$?" != 0 ] ; then
     echo "ERROR: run of ${commandToRunSplit} failed." ;
     exit 1 ;

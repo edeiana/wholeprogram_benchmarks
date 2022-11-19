@@ -1,75 +1,32 @@
-# Commands
-CC=clang
-CPP=clang++
-OPT=opt
-OPT_LEVEL=-O3
+BENCHMARK=test
+LIBS=-lm -mcmodel=large -lstdc++ -lpthread
+#-L../../parsec-3.0/pkgs/apps/x264/inst/amd64-linux.gclang/lib -lx264 -L/usr/lib64 -L/usr/lib
+#-noelle-disable-loop-aware-dependence-analyses for x264
 
-NOELLE_CORES ?= 8
+all: memorytool-all
 
-# Arguments
-BENCHMARK=
-PARALLELIZATION_OPTIONS=-noelle-disable-helix -noelle-disable-dswp
-DISABLE_ENABLERS=-noelle-inliner-avoid-hoist-to-main -noelle-disable-whilifier -noelle-disable-loop-invariant-code-motion -noelle-disable-loop-distribution
-NOELLE_OPTIONS=-noelle-verbose=3 -noelle-pdg-verbose=1 -noelle-min-hot=1 -noelle-max-cores=$(NOELLE_CORES) $(DISABLE_ENABLERS)
+memorytool-all:
+	PROGRAM_LIBS="$(LIBS)" $@ $(BENCHMARK).bc
 
-# Front-end
-FRONTEND_FLAGS=-emit-llvm -O1 -Xclang -disable-llvm-passes
-INCLUDES=-Iinclude/threadpool/include
+memorytool-accelerator:
+	PROGRAM_LIBS="$(LIBS)" $@ $(BENCHMARK).bc
 
-# Runtime
-RUNTIME_DIRNAME="threadpool"
-RUNTIME_GITREPO="https://github.com/scampanoni/virgil.git"
-RUNTIME_CFLAGS="-DNDEBUG"
-RUNTIME=Parallelizer_utils
+memorytool-criticalsection:
+	PROGRAM_LIBS="$(LIBS)" $@ $(BENCHMARK).bc
 
-# Libraries
-LIBS=-lm -lstdc++ -lpthread
+memorytool-statesizes:
+	PROGRAM_LIBS="$(LIBS)" $@ $(BENCHMARK).bc
 
-all: baseline_parallelized.bc
+memorytool-stateprivatization:
+	PROGRAM_LIBS="$(LIBS)" $@ $(BENCHMARK).bc
 
-baseline.bc: $(BENCHMARK).bc $(RUNTIME).bc
-	llvm-link $^ -o $@
-	noelle-norm $@ -o $@
-	mv $< NOELLE_input.bc
+memorytool-referencecycles:
+	PROGRAM_LIBS="$(LIBS)" $@ $(BENCHMARK).bc
 
-baseline_prof: baseline.bc
-	noelle-prof-coverage $^ $@ $(LIBS)
-
-pre.profraw: baseline_prof
-	cd train ; ./../$< `tail -n 1 ../run_train.sh | awk -F$(BENCHMARK) '{print $$2}'`; mv *.profraw $@ ; mv $@ ../ ;
-
-baseline_pre.bc: pre.profraw baseline.bc
-	noelle-meta-prof-embed $^ -o $@
-	noelle-pre $@ $(NOELLE_OPTIONS)
-	noelle-meta-clean $@ $@
-	llvm-dis $@
-
-baseline_pre_prof: baseline_pre.bc
-	noelle-prof-coverage $^ $@ $(LIBS)
-
-default.profraw: baseline_pre_prof
-	cd train ; ./../$< `tail -n 1 ../run_train.sh | awk -F$(BENCHMARK) '{print $$2}'`; mv $@ ../ ;
-
-baseline_with_metadata.bc: default.profraw baseline_pre.bc
-	noelle-meta-prof-embed $^ -o $@
-	noelle-meta-pdg-embed $@ -o $@
-	llvm-dis $@
-
-baseline_parallelized.bc: baseline_with_metadata.bc
-	noelle-parallelizer $^ -o $@ $(NOELLE_OPTIONS) $(PARALLELIZATION_OPTIONS)
-	llvm-dis $@
-	cp $@ $(BENCHMARK).bc
-
-$(RUNTIME).bc: $(RUNTIME).cpp download
-	$(CPP) $(RUNTIME_CFLAGS) $(INCLUDES) -std=c++17 -emit-llvm $(OPT_LEVEL) -c $< -o $@
-
-$(RUNTIME).cpp:
-	./fetchRuntime.sh
-
-download:
-	mkdir -p include ; cd include ; ../download.sh $(RUNTIME_GITREPO) $(RUNTIME_DIRNAME) ;
+memorytool-stats:
+	PROGRAM_LIBS="$(LIBS)" $@ $(BENCHMARK).bc
 
 clean:
-	rm -rf include/ Parallelizer_utils.* baseline* default.profraw output.prof noelle*.txt *.dot
+	rm -rf ./$(BENCHMARK) ./$(BENCHMARK)_after_pass.bc ./$(BENCHMARK)_after_pass_O3 ./$(BENCHMARK)_after_pass_O3_binary ./*.symbol ./*.o ./*.ll ./*.json ./*.oracle
 
-.PHONY: all clean
+.PHONY: all clean memorytool-stateprivatization memorytool-referencecycles

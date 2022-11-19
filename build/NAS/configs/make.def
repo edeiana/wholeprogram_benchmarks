@@ -84,17 +84,17 @@ CLINK	= gclang
 #---------------------------------------------------------------------------
 # These macros are passed to the linker 
 #---------------------------------------------------------------------------
-C_LIB  =
+C_LIB  = -L${MEMORYTOOL_ROOT}/include -lruntime -L${MEMORYTOOL_ROOT}/include/runtime/oneTBB/build/linux_intel64_gcc_cc8.3.1_libc2.28_kernel4.18.0_release -ltbb -lpthread -lboost_serialization -lstdc++ -lc
 
 #---------------------------------------------------------------------------
 # These macros are passed to the compiler 
 #---------------------------------------------------------------------------
-C_INC = -I../common
+C_INC = -I../common -I${MEMORYTOOL_ROOT}/include
 
 #---------------------------------------------------------------------------
 # Global *compile time* flags for C programs
 #---------------------------------------------------------------------------
-CFLAGS	= -g -O3 -mcmodel=large -march=native
+CFLAGS	= -O1 -Xclang -disable-llvm-passes -g -rdynamic -fno-omit-frame-pointer -mcmodel=large 
 # CFLAGS = -g
 
 #---------------------------------------------------------------------------
@@ -111,7 +111,7 @@ CLINKFLAGS = -lm -mcmodel=large
 # this compiler go here also; typically there are few flags required; hence 
 # there are no separate macros provided for such flags.
 #---------------------------------------------------------------------------
-UCC	= gclang -O -mcmodel=large
+UCC	= gclang -O
 
 
 #---------------------------------------------------------------------------

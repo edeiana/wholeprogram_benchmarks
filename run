@@ -55,6 +55,14 @@ for benchmark in ${benchmarksToRun[@]} ; do
   ./condor/scripts/run.sh ${inputName} ${benchmark} ${numOfRuns} ${timeFile} ;
   mv ${timeFile} ${experimentDir}/ ;
 
+  # Copy stderr file (this is where perf stat output is)
+  stderrFile="${benchmarkSuite}/benchmarks/${benchmark}/${benchmark}_${inputName}_stderr.txt" ;
+  if ! test -e ${stderrFile} ; then
+    echo "WARNING: output file ${stderrFile} not found. Continue." ;
+    continue ;
+  fi
+  cp ${stderrFile} ${experimentDir}/ ;
+
   # Copy output file
   outputFile="${benchmarkSuite}/benchmarks/${benchmark}/${benchmark}_${inputName}_output.txt" ;
   if ! test -e ${outputFile} ; then
@@ -62,4 +70,12 @@ for benchmark in ${benchmarksToRun[@]} ; do
     continue ;
   fi
   cp ${outputFile} ${experimentDir}/ ;
+
+  # Copy stdout file
+  stdoutFile="${benchmarkSuite}/benchmarks/${benchmark}/${benchmark}_${inputName}_stdout.txt" ;
+  if ! test -e ${stdoutFile} ; then
+    echo "WARNING: output file ${stdoutFile} not found. Continue." ;
+    continue ;
+  fi
+  cp ${stdoutFile} ${experimentDir}/ ;
 done

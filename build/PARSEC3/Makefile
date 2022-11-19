@@ -6,7 +6,7 @@ all: baseline_code_generation
 
 optimized_code_generation: compile_all bitcode bitcode_copy setup optimization binary run
 
-baseline_code_generation: compile_all bitcode bitcode_copy setup binary
+baseline_code_generation: compile_all bitcode bitcode_copy setup
 
 parsec-3.0:
 	./scripts/install.sh $(TAR)

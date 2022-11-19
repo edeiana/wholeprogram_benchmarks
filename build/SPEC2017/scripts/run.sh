@@ -10,18 +10,25 @@ function runBenchmark {
 		echo "Warning: Binary \"${1}\" not found for \"${1}\", Skipping "
 		return
 	fi
-	cd ${BENCHMARKS_DIR}/${1}/${inputsize}
-	# lastline="`tail -n 1 speccmds.cmd`"
-	# arguments="$( echo $lastline | awk -F'peak.gclang ' '{print $2}')"
+	cd ${BENCHMARKS_DIR}/${1} ;
 	lastline="`tail -n 1 ${BENCHMARKS_DIR}/${1}/run_${inputsize}.sh`"
 	arguments="$( echo $lastline | awk -F${1} '{print $2}')"
-	echo "Running \"${1}\" with \"${1}_newbin ${arguments} >${1}_${inputsize}_output.txt\""
-	# ${BENCHMARKS_DIR}/${1}/${1}_newbin ${arguments} >${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt
-  nthreads="1" ;
-  export OMP_NUM_THREADS=${nthreads} ;
-	perf stat ../${1} ${arguments} >${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt
+	echo "Running \"${1}\" with \"${1} ${arguments} >${1}_${inputsize}_output.txt\""
+
+  benchmarkArg="${1}" ;
+  pathToBenchmark=${BENCHMARKS_DIR}/${benchmarkArg};
+  perfStatFile="${pathToBenchmark}/${benchmarkArg}_${inputsize}_output.txt"
+  stderrFile="${pathToBenchmark}/${benchmarkArg}_${inputsize}_stderr.txt" ;
+  stdoutFile="${pathToBenchmark}/${benchmarkArg}_${inputsize}_stdout.txt" ;
+  rm -f ${perfStatFile} ;
+  rm -f ${stderrFile} ;
+  rm -f ${stdoutFile} ;
+  cmdToRunSplit="memorytool-run ./$1 ${arguments}" ;
+  cmd="eval perf stat ${cmdToRunSplit}" ;
+  ${cmd} 1> >(tee -a ${stdoutFile}) 2> >(tee -a ${stderrFile} >&2) > ${perfStatFile} ;
+
   exitOutput=$? ;
-	echo `tail -n 1 ${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt`
+  echo `tail -n 1 ${perfStatFile}` ;
 	echo "--------------------------------------------------------------------------------------"
 }
 

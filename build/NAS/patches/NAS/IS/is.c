@@ -29,8 +29,7 @@
   OpenMP C version: S. Satoh
   
 --------------------------------------------------------------------*/
-extern double timer_read(int);
-
+#include "wrapper.hpp" // ED
 #include "npbparams.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -636,8 +635,12 @@ main( argc, argv )
 
 /*  Do one interation for free (i.e., untimed) to guarantee initialization of  
     all data and code pages and respective tables */
-#pragma omp parallel    
+#pragma omp parallel
+    { 
+    //uint64_t stateID = caratGetStateWrapper((char*)"main", 639); // ED
     rank( 1 );  
+    //caratReportStateWrapper(stateID); // ED
+    }
 
 /*  Start verification counter */
     passed_verification = 0;

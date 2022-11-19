@@ -1,21 +1,24 @@
 #!/bin/bash
 
 function runOptimizations {
+  benchmarkRunDir="${benchmarksDir}/${1}" ;
+
   # Check for benchmark dir
-  if [ ! -d "${benchmarksDir}/${1}" ]; then
-    echo "Warning: Benchmark directory ${1} not found, skipping." ;
+  if [ ! -d "${benchmarkRunDir}" ]; then
+    echo "Warning: Benchmark directory ${benchmarkRunDir} not found, skipping." ;
     return ;
   fi
 
-  # Go in the benchmark dir
-	cd ${benchmarksDir}/${1} ;
+  # Go in the benchmark run dir
+	cd ${benchmarkRunDir} ;
 
   # Copy all makefiles content in benchmarks
 	cp ${PWD_PATH}/makefiles/* . ;
 
   # Run optimization
 	echo "Running your optimizations for \"${1}\"" ;
-  make BENCHMARK=${1} >> noelle_output.txt 2>&1 ;
+	make clean > /dev/null ;
+  make ${TOOL} BENCHMARK=${1} >> noelle_output.txt 2>&1 ;
   exitOutput=$? ;
   return ;
 }

@@ -71,14 +71,15 @@ export MAKE="${GNUTOOL_HOME}/bin/${BINARY_PREFIX}make"
 PORTABILITY_FLAGS="-static-libgcc -Wl,--hash-style=both,--as-needed"
 
 # Arguments to use
-SB_OPT="-O3 -g -march=native"
-export CFLAGS=" ${SB_OPT} ${PORTABILITY_FLAGS} "
-export CXXFLAGS=" ${SB_OPT} -fpermissive -fno-exceptions ${PORTABILITY_FLAGS} "
+SB_OPT="-O1 -g -Xclang -disable-llvm-passes -rdynamic -fno-omit-frame-pointer -mcmodel=large -I${MEMORYTOOL_ROOT}/include -L${MEMORYTOOL_ROOT}/include -lruntime -L${MEMORYTOOL_ROOT}/include/runtime/oneTBB/build/linux_intel64_gcc_cc8.3.1_libc2.28_kernel4.18.0_release -ltbb -lpthread -lboost_serialization -lboost_system"
+#SB_OPT="-O3 -g -march=native"
+export CFLAGS=" ${SB_OPT} -funroll-loops -fprefetch-loop-arrays ${PORTABILITY_FLAGS} "
+export CXXFLAGS=" ${SB_OPT} -funroll-loops -fprefetch-loop-arrays -fpermissive -fno-exceptions ${PORTABILITY_FLAGS} "
 export CPPFLAGS=""
 export CXXCPPFLAGS=""
-export LDFLAGS="-L${CC_HOME}/lib64 -L${CC_HOME}/lib"
-export LIBS=""
-export EXTRA_LIBS=""
+export LDFLAGS="-L${CC_HOME}/lib64 -L${CC_HOME}/lib ${SB_OPT}"
+export LIBS="${SB_OPT}"
+export EXTRA_LIBS="${SB_OPT}"
 export PARMACS_MACRO_FILE="serial"
 
 

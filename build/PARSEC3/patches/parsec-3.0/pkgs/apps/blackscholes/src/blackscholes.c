@@ -7,6 +7,8 @@
 // Reference Source: Options, Futures, and Other Derivatives, 3rd Edition, Prentice 
 // Hall, John C. Hull,
 
+#include "wrapper.hpp"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -49,7 +51,7 @@ using namespace tbb;
 //Precision to use for calculations
 #define fptype float
 
-#define NUM_RUNS 1000
+#define NUM_RUNS 100
 
 typedef struct OptionData_ {
         fptype s;          // spot price
@@ -282,6 +284,8 @@ int bs_thread(void *tid_ptr) {
     int start = tid * (numOptions / nThreads);
     int end = start + (numOptions / nThreads);
 
+    uint64_t stateID = 0;
+
     for (j=0; j<NUM_RUNS; j++) {
 #ifdef ENABLE_OPENMP
 #pragma omp parallel for private(i, price, priceDelta)
@@ -289,6 +293,8 @@ int bs_thread(void *tid_ptr) {
 #else  //ENABLE_OPENMP
         for (i=start; i<end; i++) {
 #endif //ENABLE_OPENMP
+          stateID = caratGetStateWrapper((char*)"bs_thread", 294);
+
             /* Calling main function to calculate option value based on 
              * Black & Scholes's equation.
              */
@@ -305,7 +311,9 @@ int bs_thread(void *tid_ptr) {
                 numError ++;
             }
 #endif
+          caratReportStateWrapper(stateID);
         }
+        endStateInvocationWrapper(stateID);
     }
 
     return 0;

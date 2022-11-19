@@ -1,6 +1,8 @@
 //Code written by Richard O. Lee and Christian Bienia
 //Modified by Christian Fensch
 
+#include "wrapper.hpp"
+
 #include <cstdlib>
 #include <cstring>
 
@@ -470,8 +472,8 @@ void ComputeForces()
   int neighCells[3*3*3];
 
   int cindex = 0;
-  for(int ck = 0; ck < nz; ++ck)
-    for(int cj = 0; cj < ny; ++cj)
+  for(int ck = 0; ck < nz; ++ck){
+    for(int cj = 0; cj < ny; ++cj){
       for(int ci = 0; ci < nx; ++ci, ++cindex)
       {
         int np = cnumPars[cindex];
@@ -514,6 +516,9 @@ void ComputeForces()
           }
         }
       }
+    }
+  }
+
 
   const fptype tc = hSq*hSq*hSq;
   for(int i = 0; i < numCells; ++i)
@@ -1037,8 +1042,11 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_PARSEC_HOOKS
   __parsec_roi_begin();
 #endif
-  for(int i = 0; i < framenum; ++i)
+  for(int i = 0; i < framenum; ++i){
+    uint64_t stateID = caratGetStateWrapper((char*)"main", 1046);
     AdvanceFrame();
+    caratReportStateWrapper(stateID);
+  }
 #ifdef ENABLE_PARSEC_HOOKS
   __parsec_roi_end();
 #endif

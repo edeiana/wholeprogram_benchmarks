@@ -82,6 +82,12 @@ for benchmark_string in `sed 1d ${BUILD_DIR}/patches/pure_c_cpp_${2}.bset | grep
 	echo "cd `pwd`/${inputsize}" >> run_${inputsize}.sh
 	echo "./../${benchmark} ${arguments}" >> run_${inputsize}.sh
 	chmod +x run_${inputsize}.sh
+
+  # Copy benchmark binary into run dir
+  echo "${arguments}" > memorytool_train_inputs.txt ;
+
+  # Copy inputs into main benchmark dir
+  cp -r ${BENCHMARKS_DIR}/${benchmark}/${inputsize}/* ${BENCHMARKS_DIR}/${benchmark}
 done
 echo "-----------------------------------------------------------"
 echo "Run directories created at \"${BENCHMARKS_DIR}\" contain respective binaries and bitcodes. Run workload '${1}' with \"./run_$inputsize.sh\" found at respective workload directories."  

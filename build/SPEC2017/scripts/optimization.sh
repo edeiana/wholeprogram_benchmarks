@@ -11,7 +11,8 @@ function runOptimizations {
 	echo "Running your optimizations for \"${1}\"" ;
 	cd ${BENCHMARKS_DIR}/${1}
 	cp ${BUILD_DIR}/makefiles/* .
-	make BENCHMARK=${1} >> noelle_output.txt 2>&1 ;
+	make clean > /dev/null ;
+	make ${TOOL} BENCHMARK=${1} >> noelle_output.txt 2>&1 ;
   exitOutput=$? ;
   echo "  The compilation output can be found here: `pwd`/noelle_output.txt" ;
 }

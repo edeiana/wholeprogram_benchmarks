@@ -6,6 +6,9 @@
  * streamcluster - Online clustering algorithm
  *
  */
+
+#include "wrapper.hpp"
+
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -83,7 +86,7 @@ tbb::cache_aligned_allocator<bool> memoryBool;
 #endif
 
 
-float dist(const Point &p1, const Point &p2, int dim);
+float dist(Point p1, Point p2, int dim);
 
 
 #ifdef TBB_VERSION
@@ -645,7 +648,7 @@ void intshuffle(int *intarray, int length)
 }
 
 /* compute Euclidean distance squared between two points */
-float dist(const Point &p1, const Point &p2, int dim)
+float dist(Point p1, Point p2, int dim)
 {
   int i;
   float result=0.0;
@@ -1231,8 +1234,14 @@ float pFL(Points *points, int *feasible, int numfeasible,
     pthread_barrier_wait(barrier);
 #endif
     for (i=0;i<iter;i++) {
+
+      uint64_t stateID = caratGetStateWrapper((char*)"pFL", 1235);
+
       x = i%numfeasible;
       change += pgain(feasible[x], points, z, k, pid, barrier);
+
+      caratReportStateWrapper(stateID);
+
     }
     cost -= change;
 #ifdef ENABLE_THREADS
