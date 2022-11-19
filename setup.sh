@@ -20,3 +20,6 @@ export PATH=${MEMORYTOOL_ROOT}/tools/noelle/install/bin:${PATH} ;
 # Add pin
 source ${MEMORYTOOL_ROOT}/extra/pin/3.13/enable ;
 export PIN_ROOT="${MEMORYTOOL_ROOT}/extra/pin/3.13/download" ;
+
+# For SPEC2017
+export LLVM_PATH="`llvm-config --prefix`" ;
