@@ -37,7 +37,7 @@ cd ${pathToBenchmarkSuite} ;
 ./bin/parsecmgmt -a fullclean -c gclang ;
 
 # Compile list of benchmarks with gclang (cannot compile them all, parsec stops at the first error)
-benchmarksList=("blackscholes" "bodytrack" "canneal" "fluidanimate" "freqmine" "streamcluster" "swaptions") ;
+benchmarksList=("bodytrack" "fluidanimate" "streamcluster" "swaptions") ;
 for elem in ${benchmarksList[@]} ; do
   ./bin/parsecmgmt -a build -c gclang -p ${elem} ;
 done
