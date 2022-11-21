@@ -3,6 +3,7 @@
 function runBenchmark {
   benchmarkArg="${1}" ;
   inputArg="test" ;
+  timeFile=`mktemp` ;
 
   # Check if paths exists
   pathToBenchmark="${benchmarksDir}/${1}" ;
@@ -21,7 +22,7 @@ function runBenchmark {
   touch ./run_args.txt ;
   nthreads="`grep -c ^processor /proc/cpuinfo`";
   export OMP_NUM_THREADS=${nthreads} ;
-  eval perf stat ${commandToRunSplit} > ${perfStatFile} ;
+  eval /usr/bin/time -f %e -o ${timeFile} ${commandToRunSplit} > ${perfStatFile} ;
   if [ "$?" != 0 ] ; then
     echo "ERROR: run of ${commandToRunSplit} failed." ;
     exit 1 ;
@@ -30,6 +31,9 @@ function runBenchmark {
   # Print last line of perf stat output file
   echo `tail -n 1 ${perfStatFile}` ;
         echo "--------------------------------------------------------------------------------------" ;
+
+  echo `tail -n 1 ${timeFile}` ;
+  rm ${timeFile} ;
 
   return ;
 
