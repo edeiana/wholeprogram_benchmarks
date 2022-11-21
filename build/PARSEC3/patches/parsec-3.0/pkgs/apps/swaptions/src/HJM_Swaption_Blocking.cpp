@@ -3,7 +3,7 @@
 //Authors: Mark Broadie, Jatin Dewanwala
 //Collaborator: Mikhail Smelyanskiy, Intel, Jike Chong (Berkeley)
 
-#include "wrapper.hpp"
+#include "wrapper.hpp" // ED
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -148,16 +148,19 @@ int HJM_Swaption_Blocking(FTYPE *pdSwaptionPrice, //Output vector that will stor
   dSumSimSwaptionPrice = 0.0;
   dSumSquareSimSwaptionPrice = 0.0;
 
+  uint64_t stateID = 0; // ED
+
   //Simulations begin:
   for (l=0;l<=lTrials-1;l+=BLOCKSIZE) {
 
-    //uint64_t stateID = caratGetStateWrapper("main", 0);
+    stateID = caratGetStateWrapper("HJM_Swaption_Blocking", 156); // ED
 
     //For each trial a new HJM Path is generated
       iSuccess = HJM_SimPath_Forward_Blocking(ppdHJMPath, iN, iFactors, dYears, pdForward, pdTotalDrift,ppdFactors, &iRndSeed, BLOCKSIZE); /* GC: 51% of the time goes here */
        if (iSuccess!=1){
-         //caratReportStateWrapper(stateID);
-	       return iSuccess;
+         caratReportStateWrapper(stateID); // ED
+         break;
+	       //return iSuccess;
        }
       
       //now we compute the discount factor vector
@@ -170,8 +173,9 @@ int HJM_Swaption_Blocking(FTYPE *pdSwaptionPrice, //Output vector that will stor
       iSuccess = Discount_Factors_Blocking(pdPayoffDiscountFactors, iN, dYears, pdDiscountingRatePath, BLOCKSIZE); /* 15% of the time goes here */
 
      if (iSuccess!=1){
-       //caratReportStateWrapper(stateID);
-	     return iSuccess;
+       caratReportStateWrapper(stateID); // ED
+       break;
+	     //return iSuccess;
      }
         
       //now we compute discount factors along the swap path
@@ -183,8 +187,9 @@ int HJM_Swaption_Blocking(FTYPE *pdSwaptionPrice, //Output vector that will stor
       }
       iSuccess = Discount_Factors_Blocking(pdSwapDiscountFactors, iSwapVectorLength, dSwapVectorYears, pdSwapRatePath, BLOCKSIZE);
       if (iSuccess!=1){
-        //caratReportStateWrapper(stateID);
-	      return iSuccess;
+        caratReportStateWrapper(stateID); // ED
+        break;
+	      //return iSuccess;
       }
 
       
@@ -206,7 +211,13 @@ int HJM_Swaption_Blocking(FTYPE *pdSwaptionPrice, //Output vector that will stor
 	dSumSquareSimSwaptionPrice += dDiscSwaptionPayoff*dDiscSwaptionPayoff;
       } // END BLOCK simulation
   
-    //caratReportStateWrapper(stateID);
+    caratReportStateWrapper(stateID); // ED
+  }
+
+  endStateInvocationWrapper(stateID); // ED
+
+  if (iSuccess != -1){ // ED
+    return iSuccess;
   }
 
   // Simulation Results Stored
