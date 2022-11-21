@@ -4,6 +4,8 @@
 //Collaborator: Mikhail Smelyanskiy, Jike Chong, Intel
 //Modified by Christian Bienia for the PARSEC Benchmark Suite
 
+#include "wrapper.hpp"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -304,8 +306,13 @@ int main(int argc, char *argv[])
 #endif // TBB_VERSION	
 
 #else
-	int threadID=0;
-	worker(&threadID);
+  uint64_t stateID = 0;
+  for (auto threadID = 0; threadID < nThreads; ++threadID){
+    stateID = caratGetStateWrapper("main",316);
+	  worker(&threadID);
+    caratReportStateWrapper(stateID);
+  }
+  endStateInvocationWrapper(stateID);
 #endif //ENABLE_THREADS
 
 #ifdef ENABLE_PARSEC_HOOKS

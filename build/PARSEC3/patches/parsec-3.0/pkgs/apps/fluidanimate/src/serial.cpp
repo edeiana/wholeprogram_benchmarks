@@ -1,7 +1,7 @@
 //Code written by Richard O. Lee and Christian Bienia
 //Modified by Christian Fensch
 
-#include "wrapper.hpp" // ED
+#include "wrapper.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -1042,13 +1042,11 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_PARSEC_HOOKS
   __parsec_roi_begin();
 #endif
-  uint64_t stateID = 0; // ED
   for(int i = 0; i < framenum; ++i){
-    stateID = caratGetStateWrapper((char*)"main", 1047);
+    uint64_t stateID = caratGetStateWrapper((char*)"main", 1046);
     AdvanceFrame();
     caratReportStateWrapper(stateID);
   }
-  endStateInvocationWrapper(stateID); // ED
 #ifdef ENABLE_PARSEC_HOOKS
   __parsec_roi_end();
 #endif
