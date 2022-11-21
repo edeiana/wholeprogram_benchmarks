@@ -7,7 +7,7 @@
  *
  */
 
-#include "wrapper.hpp"
+#include "wrapper.hpp" // ED
 
 #include <stdio.h>
 #include <iostream>
@@ -1233,16 +1233,22 @@ float pFL(Points *points, int *feasible, int numfeasible,
 #ifdef ENABLE_THREADS
     pthread_barrier_wait(barrier);
 #endif
+
+    uint64_t stateID = 0; // ED
+
     for (i=0;i<iter;i++) {
 
-      uint64_t stateID = caratGetStateWrapper((char*)"pFL", 1235);
+      stateID = caratGetStateWrapper((char*)"pFL", 1241); // ED
 
       x = i%numfeasible;
       change += pgain(feasible[x], points, z, k, pid, barrier);
 
-      caratReportStateWrapper(stateID);
+      caratReportStateWrapper(stateID); // ED
 
     }
+
+    endStateInvocationWrapper(stateID); // ED
+
     cost -= change;
 #ifdef ENABLE_THREADS
     pthread_barrier_wait(barrier);

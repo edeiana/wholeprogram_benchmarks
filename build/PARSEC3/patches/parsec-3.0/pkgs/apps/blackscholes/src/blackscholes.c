@@ -7,7 +7,7 @@
 // Reference Source: Options, Futures, and Other Derivatives, 3rd Edition, Prentice 
 // Hall, John C. Hull,
 
-#include "wrapper.hpp"
+#include "wrapper.hpp" // ED
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -284,7 +284,7 @@ int bs_thread(void *tid_ptr) {
     int start = tid * (numOptions / nThreads);
     int end = start + (numOptions / nThreads);
 
-    uint64_t stateID = 0;
+    uint64_t stateID = 0; // ED
 
     for (j=0; j<NUM_RUNS; j++) {
 #ifdef ENABLE_OPENMP
@@ -293,7 +293,7 @@ int bs_thread(void *tid_ptr) {
 #else  //ENABLE_OPENMP
         for (i=start; i<end; i++) {
 #endif //ENABLE_OPENMP
-          stateID = caratGetStateWrapper((char*)"bs_thread", 294);
+          stateID = caratGetStateWrapper((char*)"bs_thread", 296); // ED
 
             /* Calling main function to calculate option value based on 
              * Black & Scholes's equation.
@@ -311,9 +311,9 @@ int bs_thread(void *tid_ptr) {
                 numError ++;
             }
 #endif
-          caratReportStateWrapper(stateID);
+          caratReportStateWrapper(stateID); // ED
         }
-        endStateInvocationWrapper(stateID);
+        endStateInvocationWrapper(stateID); // ED
     }
 
     return 0;

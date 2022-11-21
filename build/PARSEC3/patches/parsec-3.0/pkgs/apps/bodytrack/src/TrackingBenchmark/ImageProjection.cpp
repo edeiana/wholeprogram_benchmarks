@@ -14,7 +14,7 @@
 //  modified : 
 //--------------------------------------------------------------
 
-#include "wrapper.hpp"
+//#include "wrapper.hpp" // ED
 
 #if defined(HAVE_CONFIG_H)
 # include "config.h"
@@ -85,11 +85,11 @@ void MultiCameraProjectedBody::ImageProjection(const BodyGeometry &body, MultiCa
 {
 	int n_cameras = cameras.GetCameraCount();
 	mProjBodies.resize(n_cameras);
-  uint64_t stateID = 0;
+  //uint64_t stateID = 0; // ED
 	for(int i=0;i<n_cameras;i++){
-    stateID = caratGetStateWrapper("MultiCameraProjectedBody::ImageProjection", 89);
+    //stateID = caratGetStateWrapper("MultiCameraProjectedBody::ImageProjection", 90); // ED
 		mProjBodies[i].ImageProjection(body, cameras(i));
-    caratReportStateWrapper(stateID);
+    //caratReportStateWrapper(stateID); // ED
   }
-  endStateInvocationWrapper(stateID);
+  //endStateInvocationWrapper(stateID); // ED
 }
