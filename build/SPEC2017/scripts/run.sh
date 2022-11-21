@@ -2,6 +2,8 @@
 
 
 function runBenchmark {
+  timeFile=`mktemp` ;
+
 	if [ ! -d "${BENCHMARKS_DIR}/${1}/${inputsize}" ]; then
 		echo "Error: Run directory not found for \"${1}\". Please run \"./scripts/setup.sh ${inputsize} version\" where version = [rate, speed]"
 		exit
@@ -19,10 +21,17 @@ function runBenchmark {
 	# ${BENCHMARKS_DIR}/${1}/${1}_newbin ${arguments} >${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt
   nthreads="1" ;
   export OMP_NUM_THREADS=${nthreads} ;
-	perf stat ../${1} ${arguments} >${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt
+  perfStatFile="${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt" ;
+  commandToRunSplit="../${1} ${arguments}" ;
+  eval /usr/bin/time -f %e -o ${timeFile} ${commandToRunSplit} > ${perfStatFile} ;
+  
   exitOutput=$? ;
-	echo `tail -n 1 ${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt`
+	
+  echo `tail -n 1 ${BENCHMARKS_DIR}/${1}/${1}_${inputsize}_output.txt`
 	echo "--------------------------------------------------------------------------------------"
+  
+  echo `tail -n 1 ${timeFile}` ;
+  rm ${timeFile} ;
 }
 
 
@@ -83,5 +92,4 @@ else
 fi
 
 
-echo "DONE" 
 exit $exitOutput 
