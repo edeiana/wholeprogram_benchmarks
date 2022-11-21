@@ -284,7 +284,6 @@ int bs_thread(void *tid_ptr) {
     int start = tid * (numOptions / nThreads);
     int end = start + (numOptions / nThreads);
 
-    uint64_t stateID = 0;
 
     for (j=0; j<NUM_RUNS; j++) {
 #ifdef ENABLE_OPENMP
@@ -293,8 +292,6 @@ int bs_thread(void *tid_ptr) {
 #else  //ENABLE_OPENMP
         for (i=start; i<end; i++) {
 #endif //ENABLE_OPENMP
-          stateID = caratGetStateWrapper((char*)"bs_thread", 294);
-
             /* Calling main function to calculate option value based on 
              * Black & Scholes's equation.
              */
@@ -311,9 +308,7 @@ int bs_thread(void *tid_ptr) {
                 numError ++;
             }
 #endif
-          caratReportStateWrapper(stateID);
         }
-        endStateInvocationWrapper(stateID);
     }
 
     return 0;
@@ -322,6 +317,8 @@ int bs_thread(void *tid_ptr) {
 
 int main (int argc, char **argv)
 {
+    uint64_t stateID = caratGetStateWrapper((char*)"main", 320);
+
     FILE *file;
     int i;
     int loopnum;
@@ -513,6 +510,8 @@ int main (int argc, char **argv)
     __parsec_bench_end();
 #endif
 
+    caratReportStateWrapper(stateID);
+    endStateInvocationWrapper(stateID);
     return 0;
 }
 

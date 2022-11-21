@@ -1,3 +1,4 @@
+#include "wrapper.hpp" // ED
 /*--------------------------------------------------------------------
 
   NAS Parallel Benchmarks 3.0 structured OpenMP C versions - EP
@@ -32,8 +33,6 @@ OpenMP C version: S. Satoh
 
 --------------------------------------------------------------------*/
 
-#include "wrapper.hpp"
-
 #include "npb-C.h"
 #include "npbparams.h"
 
@@ -67,6 +66,9 @@ static double q[NQ];
    c   not affect the results.
    */
 int main(int argc, char **argv) {
+  uint64_t stateID = 0; // ED
+  stateID = caratGetStateWrapper((char*)"main", 70); // ED
+
 
   double Mops, t1, t2, t3, t4, x1, x2, sx, sy, tm, an, tt, gc;
   double dum[3] = { 1.0, 1.0, 1.0 };
@@ -109,14 +111,8 @@ int main(int argc, char **argv) {
   vranlc(0, &(dum[0]), dum[1], &(dum[2]));
   dum[0] = randlc(&(dum[1]), dum[2]);
 
-  uint64_t stateID;
 #pragma omp parallel for default(shared) private(i)
-  for (i = 0; i < 2*NK; i++){
-    stateID = caratGetStateWrapper((char*)"main", 339); // ED
-    x[i] = -1.0e99;
-    caratReportStateWrapper(stateID); // ED
-  }
-  endStateInvocationWrapper(stateID); // ED
+  for (i = 0; i < 2*NK; i++) x[i] = -1.0e99;
 
   Mops = log(sqrt(fabs(max(1.0, 1.0))));
 
@@ -154,35 +150,14 @@ int main(int argc, char **argv) {
 
 #pragma omp parallel copyin(x)
   {
-    double /*t1,*/ t2, t3, t4, x1, x2;
+    double t1, t2, t3, t4, x1, x2;
     int kk, i, ik, l;
-    //    double qq[NQ];		/* private copy of q[0:NQ-1] */
-    double v0 = 0.0;
-    double v1 = 0.0;
-    double v2 = 0.0;
-    double v3 = 0.0;
-    double v4 = 0.0;
-    double v5 = 0.0;
-    double v6 = 0.0;
-    double v7 = 0.0;
-    double v8 = 0.0;
-    double v9 = 0.0;
+    double qq[NQ];		/* private copy of q[0:NQ-1] */
 
-    uint64_t stateID1;
+    for (i = 0; i < NQ; i++) qq[i] = 0.0;
+
 #pragma omp for reduction(+:sx,sy) schedule(static)  
     for (k = 1; k <= np; k++) {
-      stateID1 = caratGetStateWrapper((char*)"main", 398); // ED
-
-      // BRIAN: BELOW;
-    //  double t1;
-    // new <<
-      double t1, t2, t3, t4, x1, x2;
-      int kk, i, ik, l;
-    // new >>
-      double xBrian[2*NK];
-      for (i = 0; i < 2*NK; i++) xBrian[i] = x[i]; //x[i] = -1.0e99;
-      // BRIAN ABOVE
-
       kk = k_offset + k;
       t1 = S;
       t2 = an;
@@ -191,7 +166,7 @@ int main(int argc, char **argv) {
 
       for (i = 1; i <= 100; i++) {
         ik = kk / 2;
-        if (2 * ik != kk)  t3 = randlc(&t1, t2);
+        if (2 * ik != kk) t3 = randlc(&t1, t2);
         if (ik == 0) break;
         t3 = randlc(&t2, t2);
         kk = ik;
@@ -200,7 +175,7 @@ int main(int argc, char **argv) {
       /*      Compute uniform pseudorandom numbers. */
 
       if (TIMERS_ENABLED == TRUE) timer_start(3);
-      vranlc(2*NK, &t1, A, xBrian-1);
+      vranlc(2*NK, &t1, A, x-1);
       if (TIMERS_ENABLED == TRUE) timer_stop(3);
 
       /*
@@ -211,160 +186,92 @@ int main(int argc, char **argv) {
       if (TIMERS_ENABLED == TRUE) timer_start(2);
 
       for ( i = 0; i < NK; i++) {
-        x1 = 2.0 * xBrian[2*i] - 1.0;
-        x2 = 2.0 * xBrian[2*i+1] - 1.0;
+        x1 = 2.0 * x[2*i] - 1.0;
+        x2 = 2.0 * x[2*i+1] - 1.0;
         t1 = pow2(x1) + pow2(x2);
         if (t1 <= 1.0) {
           t2 = sqrt(-2.0 * log(t1) / t1);
           t3 = (x1 * t2);				/* Xi */
           t4 = (x2 * t2);				/* Yi */
           l = max(fabs(t3), fabs(t4));
-
-          double vv0 = 0.0;
-          double vv1 = 0.0;
-          double vv2 = 0.0;
-          double vv3 = 0.0;
-          double vv4 = 0.0;
-          double vv5 = 0.0;
-          double vv6 = 0.0;
-          double vv7 = 0.0;
-          double vv8 = 0.0;
-          double vv9 = 0.0;
-          switch (l) {
-            case 0:
-              vv0 += 1.0;
-              break;
-            case 1:
-              vv1 += 1.0;
-              break;
-            case 2:
-              vv2 += 1.0;
-              break;
-            case 3:
-              vv3 += 1.0;
-              break;
-            case 4:
-              vv4 += 1.0;
-              break;
-            case 5:
-              vv5 += 1.0;
-              break;
-            case 6:
-              vv6 += 1.0;
-              break;     
-            case 7:
-              vv7 += 1.0;
-              break;
-            case 8:
-              vv8 += 1.0;
-              break;     
-            case 9:
-              vv9 += 1.0;
-              break;    
-            default:
-              break;
-          }
-
-          v0 += vv0;
-          v1 += vv1;
-          v2 += vv2;
-          v3 += vv3;
-          v4 += vv4;
-          v5 += vv5;
-          v6 += vv6;
-          v7 += vv7;
-          v8 += vv8;
-          v9 += vv9;
-
-          //          qq[l] += 1.0;				/* counts */
+          qq[l] += 1.0;				/* counts */
           sx = sx + t3;				/* sum of Xi */
           sy = sy + t4;				/* sum of Yi */
         }
       }
       if (TIMERS_ENABLED == TRUE) timer_stop(2);
-
-      caratReportStateWrapper(stateID1); // ED
-
     }
-
-    endStateInvocationWrapper(stateID1); // ED
-
 #pragma omp critical
     {
-      q[0] += v0;
-      q[1] += v1;
-      q[2] += v2;
-      q[3] += v3;
-      q[4] += v4;
-      q[5] += v5;
-      q[6] += v6;
-      q[7] += v7;
-      q[8] += v8;
-      q[9] += v9;
-  }
+      for (i = 0; i <= NQ - 1; i++) q[i] += qq[i];
+    }
 #if defined(_OPENMP)
 #pragma omp master
-  nthreads = omp_get_num_threads();
+    nthreads = omp_get_num_threads();
 #endif /* _OPENMP */    
-} /* end of parallel region */    
+  } /* end of parallel region */    
 
-for (i = 0; i <= NQ-1; i++) {
-  gc = gc + q[i];
-}
-
-timer_stop(1);
-tm = timer_read(1);
-
-nit = 0;
-if (M == 24) {
-  if((fabs((sx- (-3.247834652034740e3))/sx) <= EPSILON) &&
-      (fabs((sy- (-6.958407078382297e3))/sy) <= EPSILON)) {
-    verified = TRUE;
+  for (i = 0; i <= NQ-1; i++) {
+    gc = gc + q[i];
   }
-} else if (M == 25) {
-  if ((fabs((sx- (-2.863319731645753e3))/sx) <= EPSILON) &&
-      (fabs((sy- (-6.320053679109499e3))/sy) <= EPSILON)) {
-    verified = TRUE;
-  }
-} else if (M == 28) {
-  if ((fabs((sx- (-4.295875165629892e3))/sx) <= EPSILON) &&
-      (fabs((sy- (-1.580732573678431e4))/sy) <= EPSILON)) {
-    verified = TRUE;
-  }
-} else if (M == 30) {
-  if ((fabs((sx- (4.033815542441498e4))/sx) <= EPSILON) &&
-      (fabs((sy- (-2.660669192809235e4))/sy) <= EPSILON)) {
-    verified = TRUE;
-  }
-} else if (M == 32) {
-  if ((fabs((sx- (4.764367927995374e4))/sx) <= EPSILON) &&
-      (fabs((sy- (-8.084072988043731e4))/sy) <= EPSILON)) {
-    verified = TRUE;
-  }
-}
 
-Mops = pow(2.0, M+1)/tm/1000000.0;
+  timer_stop(1);
+  tm = timer_read(1);
 
-printf("EP Benchmark Results: \n"
-    "CPU Time = %10.4f\n"
-    "N = 2^%5d\n"
-    "No. Gaussian Pairs = %15.0f\n"
-    "Sums = %25.15e %25.15e\n"
-    "Counts:\n",
-    tm, M, gc, sx, sy);
-for (i = 0; i  <= NQ-1; i++) {
-  printf("%3d %15.0f\n", i, q[i]);
-}
+  nit = 0;
+  if (M == 24) {
+    if((fabs((sx- (-3.247834652034740e3))/sx) <= EPSILON) &&
+        (fabs((sy- (-6.958407078382297e3))/sy) <= EPSILON)) {
+      verified = TRUE;
+    }
+  } else if (M == 25) {
+    if ((fabs((sx- (-2.863319731645753e3))/sx) <= EPSILON) &&
+        (fabs((sy- (-6.320053679109499e3))/sy) <= EPSILON)) {
+      verified = TRUE;
+    }
+  } else if (M == 28) {
+    if ((fabs((sx- (-4.295875165629892e3))/sx) <= EPSILON) &&
+        (fabs((sy- (-1.580732573678431e4))/sy) <= EPSILON)) {
+      verified = TRUE;
+    }
+  } else if (M == 30) {
+    if ((fabs((sx- (4.033815542441498e4))/sx) <= EPSILON) &&
+        (fabs((sy- (-2.660669192809235e4))/sy) <= EPSILON)) {
+      verified = TRUE;
+    }
+  } else if (M == 32) {
+    if ((fabs((sx- (4.764367927995374e4))/sx) <= EPSILON) &&
+        (fabs((sy- (-8.084072988043731e4))/sy) <= EPSILON)) {
+      verified = TRUE;
+    }
+  }
 
-c_print_results("EP", CLASS, M+1, 0, 0, nit, nthreads,
-    tm, Mops, 	
-    "Random numbers generated",
-    verified, NPBVERSION, COMPILETIME,
-    CS1, CS2, CS3, CS4, CS5, CS6, CS7);
+  Mops = pow(2.0, M+1)/tm/1000000.0;
 
-if (TIMERS_ENABLED == TRUE) {
-  printf("Total time:     %f", timer_read(1));
-  printf("Gaussian pairs: %f", timer_read(2));
-  printf("Random numbers: %f", timer_read(3));
-}
+  printf("EP Benchmark Results: \n"
+      "CPU Time = %10.4f\n"
+      "N = 2^%5d\n"
+      "No. Gaussian Pairs = %15.0f\n"
+      "Sums = %25.15e %25.15e\n"
+      "Counts:\n",
+      tm, M, gc, sx, sy);
+  for (i = 0; i  <= NQ-1; i++) {
+    printf("%3d %15.0f\n", i, q[i]);
+  }
+
+  c_print_results("EP", CLASS, M+1, 0, 0, nit, nthreads,
+      tm, Mops, 	
+      "Random numbers generated",
+      verified, NPBVERSION, COMPILETIME,
+      CS1, CS2, CS3, CS4, CS5, CS6, CS7);
+
+  if (TIMERS_ENABLED == TRUE) {
+    printf("Total time:     %f", timer_read(1));
+    printf("Gaussian pairs: %f", timer_read(2));
+    printf("Random numbers: %f", timer_read(3));
+  }
+
+  caratReportStateWrapper(stateID); // ED
+  endStateInvocationWrapper(stateID); // ED
+
 }

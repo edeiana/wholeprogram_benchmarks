@@ -1,3 +1,4 @@
+#include "wrapper.hpp" // ED
 /*
  * Copyright (C) 2008 Princeton University
  * All rights reserved.
@@ -6,8 +7,6 @@
  * streamcluster - Online clustering algorithm
  *
  */
-
-#include "wrapper.hpp"
 
 #include <stdio.h>
 #include <iostream>
@@ -91,28 +90,28 @@ float dist(Point p1, Point p2, int dim);
 
 #ifdef TBB_VERSION
 struct HizReduction {
-private:
-  double hiz;
-public:
-  Points *points;
-  HizReduction(Points *points_): hiz(0),points(points_){}
-  HizReduction( HizReduction &d, tbb::split){hiz=0; points = d.points;}
+  private:
+    double hiz;
+  public:
+    Points *points;
+    HizReduction(Points *points_): hiz(0),points(points_){}
+    HizReduction( HizReduction &d, tbb::split){hiz=0; points = d.points;}
 
-  void operator()(const tbb::blocked_range<int>& range) {
-    double myhiz = 0;
-    long ptDimension = points->dim;
-    int begin = range.begin();
-    int end = range.end();
-    
-    for(int kk=begin; kk!=end; kk++) {
-      myhiz += dist(points->p[kk], points->p[0],
-			 ptDimension)*points->p[kk].weight;
+    void operator()(const tbb::blocked_range<int>& range) {
+      double myhiz = 0;
+      long ptDimension = points->dim;
+      int begin = range.begin();
+      int end = range.end();
+
+      for(int kk=begin; kk!=end; kk++) {
+        myhiz += dist(points->p[kk], points->p[0],
+            ptDimension)*points->p[kk].weight;
+      }
+      hiz += myhiz;
     }
-    hiz += myhiz;
-  }
 
-  void join(HizReduction &d){hiz += d.getHiz(); /*fprintf(stderr,"reducing: %lf\n",hiz);*/}
-  double getHiz(){return hiz;}
+    void join(HizReduction &d){hiz += d.getHiz(); /*fprintf(stderr,"reducing: %lf\n",hiz);*/}
+    double getHiz(){return hiz;}
 
 };
 
@@ -123,12 +122,12 @@ struct CenterCreate {
   void operator()(const tbb::blocked_range<int>&range) const {
     int begin = range.begin();
     int end = range.end();
-    
-     for( int k = begin; k!=end; k++ )    {
-       float distance = dist(points->p[k],points->p[0],points->dim);
-       points->p[k].cost = distance * points->p[k].weight;
-       points->p[k].assign=0;
-     } 
+
+    for( int k = begin; k!=end; k++ )    {
+      float distance = dist(points->p[k],points->p[0],points->dim);
+      points->p[k].cost = distance * points->p[k].weight;
+      points->p[k].assign=0;
+    } 
   }
 
 };
@@ -136,83 +135,83 @@ struct CenterCreate {
 
 
 struct CenterOpen {
-private:
-  double total_cost;
-public:
-  Points *points;
-  int i;
-  int type; /*type=0: compute. type=1: reduction */
-  CenterOpen(Points *p):points(p),total_cost(0),type(0){}
-  CenterOpen(CenterOpen &rhs, tbb::split) 
-  {
-    total_cost = 0; 
-    points = rhs.points;
-    i = rhs.i;
-    type = rhs.type;
-  }
-
-  void operator()(const tbb::blocked_range<int> &range) {
-    int begin = range.begin();
-    int end = range.end();
-
-    if(type) {
-      double local_total = 0.0;
-      for(int k = begin; k!=end; k++ )  
-	local_total+=points->p[k].cost;
-      total_cost += local_total;
+  private:
+    double total_cost;
+  public:
+    Points *points;
+    int i;
+    int type; /*type=0: compute. type=1: reduction */
+    CenterOpen(Points *p):points(p),total_cost(0),type(0){}
+    CenterOpen(CenterOpen &rhs, tbb::split) 
+    {
+      total_cost = 0; 
+      points = rhs.points;
+      i = rhs.i;
+      type = rhs.type;
     }
-    else {
-      for(int k = begin; k!=end; k++ )  {
-	float distance = dist(points->p[i],points->p[k],points->dim);
-	if( i && distance*points->p[k].weight < points->p[k].cost )  {
-	  points->p[k].cost = distance * points->p[k].weight;
-	  points->p[k].assign=i;
-	}
+
+    void operator()(const tbb::blocked_range<int> &range) {
+      int begin = range.begin();
+      int end = range.end();
+
+      if(type) {
+        double local_total = 0.0;
+        for(int k = begin; k!=end; k++ )  
+          local_total+=points->p[k].cost;
+        total_cost += local_total;
       }
+      else {
+        for(int k = begin; k!=end; k++ )  {
+          float distance = dist(points->p[i],points->p[k],points->dim);
+          if( i && distance*points->p[k].weight < points->p[k].cost )  {
+            points->p[k].cost = distance * points->p[k].weight;
+            points->p[k].assign=i;
+          }
+        }
+      }
+
     }
-    
-  }
 
 
-  void join(CenterOpen &lhs){total_cost+=lhs.getTotalCost();}
-  double getTotalCost(){return total_cost;}
+    void join(CenterOpen &lhs){total_cost+=lhs.getTotalCost();}
+    double getTotalCost(){return total_cost;}
 
 };
 
 
 
 class CenterTableCount: public tbb::task{
-private:
-  Points *points;
-  double *work_mem;
-  int stride;
-  int pid;
-public:
-  CenterTableCount(int id, int s, Points *p, double *mem):
-    pid(id), stride(s), points(p),work_mem(mem){}
+  private:
+    Points *points;
+    double *work_mem;
+    int stride;
+    int pid;
+  public:
+    CenterTableCount(int id, int s, Points *p, double *mem):
+      pid(id), stride(s), points(p),work_mem(mem){}
 
-  task *execute() {
-    int count = 0;
-    long bsize = points->num/((NUM_DIVISIONS));
-    long k1 = bsize * pid;
-    long k2 = k1 + bsize;
+    task *execute() {
+      int count = 0;
+      long bsize = points->num/((NUM_DIVISIONS));
+      long k1 = bsize * pid;
+      long k2 = k1 + bsize;
 
-    if( pid == (NUM_DIVISIONS)-1 ) 
-      k2 = points->num;
+      if( pid == (NUM_DIVISIONS)-1 ) 
+        k2 = points->num;
 
-    /* fprintf(stderr,"\t[CenterTableCount]: pid=%d stride=%d from %d to %d\n",
-       pid, stride, k1, k2); */
+      /* fprintf(stderr,"\t[CenterTableCount]: pid=%d stride=%d from %d to %d\n",
+         pid, stride, k1, k2); */
 
-    for( int i = k1; i < k2; i++ ) {
-      if( is_center[i] ) {
-	center_table[i] = count++;
+      for( int i = k1; i < k2; i++ ) {
+        if( is_center[i] ) {
+          center_table[i] = count++;
+        }
       }
-    }
 
-    work_mem[pid*stride] = count;
-    //fprintf(stderr,"PID %d done!\n",pid);
-    return NULL;
-  }
+      work_mem[pid*stride] = count;
+      //fprintf(stderr,"PID %d done!\n",pid);
+      return NULL;
+    }
 
 };
 
@@ -222,33 +221,33 @@ class CenterTableCountTask: public tbb::task {
   Points *points;
   double *work_mem;
   int stride;
-public:
+  public:
   CenterTableCountTask(int s, Points *p, double *mem):
     stride(s), points(p), work_mem(mem), is_continuation(0){} 
 
   task *execute() {
     tbb::task_list list;
     int p;
-    
+
     if(!is_continuation) {
       recycle_as_continuation();
       set_ref_count(NUM_DIVISIONS);
 
       for(p = 1; p < (NUM_DIVISIONS); p++ ) 
-	  list.push_back( *new( allocate_child() ) CenterTableCount(p, stride, points, work_mem));
+        list.push_back( *new( allocate_child() ) CenterTableCount(p, stride, points, work_mem));
       CenterTableCount &me = *new( allocate_child() ) CenterTableCount(0, stride, points, work_mem);
       spawn(list);
       is_continuation = 1;
-      
+
       return &me;
 
     }else {
       /* continuation part */
       int accum = 0;
       for( int p = 0; p < (NUM_DIVISIONS); p++ ) {
-	int tmp = (int)work_mem[p*stride];
-	work_mem[p*stride] = accum;
-	accum += tmp;
+        int tmp = (int)work_mem[p*stride];
+        work_mem[p*stride] = accum;
+        accum += tmp;
       }
       //fprintf(stderr,"Accum = %d\n",accum);
       return NULL;
@@ -262,7 +261,7 @@ class FixCenter: public tbb::task {
   double *work_mem;
   int pid;
   int stride;
-public:
+  public:
   FixCenter(int id, int s, Points *p, double *mem):
     pid(id),stride(s),points(p),work_mem(mem){}
   task *execute(){
@@ -277,15 +276,15 @@ public:
 #endif
     /*fprintf(stderr,"\t[FixCenter]: pid=%d stride=%d from %d to %d is_center=0x%08x\n",
       pid, stride, k1, k2,(int)is_center);  */
-    
+
     for( int i = k1; i < k2; i++ ) {
       if( is_center[i] ) {
-	center_table[i] += (int)work_mem[pid*stride];
-	//fprintf(stderr,"\tcenter_table[%d] = %d\n",i,center_table[i]);
+        center_table[i] += (int)work_mem[pid*stride];
+        //fprintf(stderr,"\tcenter_table[%d] = %d\n",i,center_table[i]);
       }
 
     }
-      //fprintf(stderr,"PID %d done!\n",pid);
+    //fprintf(stderr,"PID %d done!\n",pid);
     return NULL;
 
   }
@@ -296,7 +295,7 @@ class FixCenterTask: public tbb::task {
   Points *points;
   double *work_mem;
   int stride;
-public:
+  public:
   FixCenterTask(int s, Points *p, double *mem):
     stride(s), points(p), work_mem(mem), is_continuation(false){} 
 
@@ -307,7 +306,7 @@ public:
       recycle_as_continuation();
       set_ref_count(NUM_DIVISIONS);
       for(p = 1; p < (NUM_DIVISIONS); p++ ) 
-	  list.push_back( *new( allocate_child() ) FixCenter(p, stride, points, work_mem));
+        list.push_back( *new( allocate_child() ) FixCenter(p, stride, points, work_mem));
       spawn(list);
       FixCenter &me = *new (allocate_child()) FixCenter(0, stride, points, work_mem);
       is_continuation = true;
@@ -327,7 +326,7 @@ class LowerCost: public tbb::task {
   int K;
   int pid;
   int stride;
-public:
+  public:
   LowerCost(int id, int s, Points *p, long x_, double *mem, int k): 
     pid(id), stride(s), points(p), work_mem(mem), K(k), x(x_){}
   task *execute() {
@@ -346,46 +345,46 @@ public:
 
     /*fprintf(stderr,"\t[LowerCost]: pid=%d stride=%d from %d to %d\n",
       pid, stride, k1, k2);  */
-    
+
     double *cost_of_opening_x = &work_mem[pid*stride + K+1];
 
     for ( i = k1; i < k2; i++ ) {
       float x_cost = dist(points->p[i], points->p[x], points->dim) 
-	* points->p[i].weight;
+        * points->p[i].weight;
       float current_cost = points->p[i].cost;
 
       //fprintf(stderr,"\t (x_cost=%lf < current_cost=%lf)\n",x_cost, current_cost);
       if ( x_cost < current_cost ) {
 
-	// point i would save cost just by switching to x
-	// (note that i cannot be a median, 
-	// or else dist(p[i], p[x]) would be 0)
-	
-	switch_membership[i] = 1;
-	local_cost_of_opening_x += x_cost - current_cost;
-	
+        // point i would save cost just by switching to x
+        // (note that i cannot be a median, 
+        // or else dist(p[i], p[x]) would be 0)
+
+        switch_membership[i] = 1;
+        local_cost_of_opening_x += x_cost - current_cost;
+
       } else {
-	
-	// cost of assigning i to x is at least current assignment cost of i
-	
-	// consider the savings that i's **current** median would realize
-	// if we reassigned that median and all its members to x;
-	// note we've already accounted for the fact that the median
-	// would save z by closing; now we have to subtract from the savings
-	// the extra cost of reassigning that median and its members 
-	int assign = points->p[i].assign;
-	lower[center_table[assign]] += current_cost - x_cost;
-	//fprintf(stderr,"Lower[%d]=%lf\n",center_table[assign], lower[center_table[assign]]);
+
+        // cost of assigning i to x is at least current assignment cost of i
+
+        // consider the savings that i's **current** median would realize
+        // if we reassigned that median and all its members to x;
+        // note we've already accounted for the fact that the median
+        // would save z by closing; now we have to subtract from the savings
+        // the extra cost of reassigning that median and its members 
+        int assign = points->p[i].assign;
+        lower[center_table[assign]] += current_cost - x_cost;
+        //fprintf(stderr,"Lower[%d]=%lf\n",center_table[assign], lower[center_table[assign]]);
       }
     }
-    
+
     *cost_of_opening_x = local_cost_of_opening_x;
     return NULL;
   }
-  
-  
+
+
 };
-  
+
 class LowerCostTask: public tbb::task {
   bool is_continuation;
   Points *points;
@@ -393,7 +392,7 @@ class LowerCostTask: public tbb::task {
   int K;
   long x;
   int stride;
-public:
+  public:
   LowerCostTask(int s, Points *p, long x_, double *mem, int k): 
     stride(s), points(p), work_mem(mem), K(k), x(x_), is_continuation(false){}
 
@@ -404,7 +403,7 @@ public:
       recycle_as_continuation();
       set_ref_count(NUM_DIVISIONS);
       for(p = 1; p < (NUM_DIVISIONS); p++ ) 
-	  list.push_back( *new( allocate_child() )  LowerCost(p, stride, points, x, work_mem, K));
+        list.push_back( *new( allocate_child() )  LowerCost(p, stride, points, x, work_mem, K));
       spawn(list);
       LowerCost &me = *new (allocate_child())  LowerCost(0, stride, points, x, work_mem, K);
       is_continuation = true;
@@ -427,7 +426,7 @@ class CenterClose: public tbb::task {
   int pid, stride;
   int K;
 
-public:
+  public:
   CenterClose(int id, int s, Points *p, double *mem, int k, double z_): 
     pid(id),stride(s),points(p),work_mem(mem),K(k), z(z_){}
 
@@ -447,27 +446,27 @@ public:
 
     number_of_centers_to_close = &work_mem[pid*stride + K];
     cost_of_opening_x = &work_mem[pid*stride + K+1];
-    
-      for ( int i = k1; i < k2; i++ ) {
-	if( is_center[i] ) {
-	  double low = z;
-	  //aggregate from all threads
-	  for( int p = 0; p < (NUM_DIVISIONS); p++ ) {
-	    low += work_mem[center_table[i]+p*stride];
-	  }
-	  gl_lower[center_table[i]] = low;
-	  if ( low > 0 ) {
-	    // i is a median, and
-	    // if we were to open x (which we still may not) we'd close i
-	    
-	    // note, we'll ignore the following quantity unless we do open x
-	    ++local_number_of_centers_to_close;  
-	    *cost_of_opening_x -= low;
-	  }
-	}
+
+    for ( int i = k1; i < k2; i++ ) {
+      if( is_center[i] ) {
+        double low = z;
+        //aggregate from all threads
+        for( int p = 0; p < (NUM_DIVISIONS); p++ ) {
+          low += work_mem[center_table[i]+p*stride];
+        }
+        gl_lower[center_table[i]] = low;
+        if ( low > 0 ) {
+          // i is a median, and
+          // if we were to open x (which we still may not) we'd close i
+
+          // note, we'll ignore the following quantity unless we do open x
+          ++local_number_of_centers_to_close;  
+          *cost_of_opening_x -= low;
+        }
       }
-      *number_of_centers_to_close = (double)local_number_of_centers_to_close;
-      return NULL;
+    }
+    *number_of_centers_to_close = (double)local_number_of_centers_to_close;
+    return NULL;
   }
 
 };
@@ -480,7 +479,7 @@ class CenterCloseTask: public tbb::task {
   int stride;
   double z;
   int K;
-public:
+  public:
   CenterCloseTask(int s, Points *p, double *mem, int k, double z_): 
     stride(s),points(p),work_mem(mem),K(k), z(z_), is_continuation(false){}
 
@@ -491,7 +490,7 @@ public:
       recycle_as_continuation();
       set_ref_count(NUM_DIVISIONS);
       for(p = 1; p < (NUM_DIVISIONS); p++ ) 
-	list.push_back( *new( allocate_child() )  CenterClose(p, stride, points, work_mem, K, z));
+        list.push_back( *new( allocate_child() )  CenterClose(p, stride, points, work_mem, K, z));
       spawn(list);
       CenterClose &me = *new (allocate_child())  CenterClose(0, stride, points, work_mem, K, z);
       is_continuation = true;
@@ -512,7 +511,7 @@ class SaveMoney: public tbb::task{
   double *work_mem;
   long x;
   int pid, stride;
-public:
+  public:
   SaveMoney(int id, int s, Points *p, long x_, double *mem): 
     pid(id), stride(s), points(p), x(x_), work_mem(mem){}
   task *execute() {
@@ -521,29 +520,29 @@ public:
     long k1 = bsize * pid;
     long k2 = k1 + bsize;
     int i;
-    
+
     if( pid == (NUM_DIVISIONS)-1 ) 
       k2 = points->num;
 
     /*fprintf(stderr,"\t[SaveMoney]: pid=%d stride=%d from %d to %d\n",
       pid, stride, k1, k2);   */
-    
+
 
     //  we'd save money by opening x; we'll do it
     for ( int i = k1; i < k2; i++ ) {
       bool close_center = gl_lower[center_table[points->p[i].assign]] > 0 ;
       if ( switch_membership[i] || close_center ) {
-	// Either i's median (which may be i itself) is closing,
-	// or i is closer to x than to its current median
-	points->p[i].cost = points->p[i].weight *
-	  dist(points->p[i], points->p[x], points->dim);
-	points->p[i].assign = x;
-	//fprintf(stderr,"\t[SaveMoney] %d: cost %lf, x=%d\n",i,points->p[i].cost, x);
+        // Either i's median (which may be i itself) is closing,
+        // or i is closer to x than to its current median
+        points->p[i].cost = points->p[i].weight *
+          dist(points->p[i], points->p[x], points->dim);
+        points->p[i].assign = x;
+        //fprintf(stderr,"\t[SaveMoney] %d: cost %lf, x=%d\n",i,points->p[i].cost, x);
       }
     }
     for( int i = k1; i < k2; i++ ) {
       if( is_center[i] && gl_lower[center_table[i]] > 0 ) {
-	is_center[i] = false;
+        is_center[i] = false;
       }
     }
     if( x >= k1 && x < k2 ) {
@@ -564,7 +563,7 @@ class SaveMoneyTask: public tbb::task {
   double* work_mem;
   int stride;
 
-public:
+  public:
   SaveMoneyTask(int s, Points *p, long x_, double *mem): 
     stride(s), points(p), x(x_), work_mem(mem) ,is_continuation(false){}
 
@@ -576,7 +575,7 @@ public:
       recycle_as_continuation();
       set_ref_count(NUM_DIVISIONS);
       for(p = 1; p < (NUM_DIVISIONS); p++ ) 
-	list.push_back( *new( allocate_child() )  SaveMoney(p, stride, points, x, work_mem));
+        list.push_back( *new( allocate_child() )  SaveMoney(p, stride, points, x, work_mem));
       spawn(list);
       SaveMoney &me = *new (allocate_child())  SaveMoney(0, stride, points, x, work_mem);
       is_continuation = true;
@@ -596,7 +595,7 @@ public:
 
 
 int isIdentical(float *i, float *j, int D)
-// tells whether two points of D dimensions are identical
+  // tells whether two points of D dimensions are identical
 {
   int a = 0;
   int equal = 1;
@@ -673,7 +672,7 @@ float pspeedy(Points *points, float z, long *kcenter)
     CenterCreate c(points);
     tbb::parallel_for(tbb::blocked_range<int>(0,points->num, grain_size),c);
   }
-    
+
   *kcenter = 1;
 
 
@@ -684,10 +683,10 @@ float pspeedy(Points *points, float z, long *kcenter)
     for(i = 1; i < points->num; i++ )  {
       bool to_open = ((float)lrand48()/(float)INT_MAX)<(points->p[i].cost/z);
       if( to_open )  {
-	(*kcenter)++;
-	c.i = i;
-	//fprintf(stderr,"** New center for i=%d\n",i);
-	tbb::parallel_reduce(tbb::blocked_range<int>(0,points->num,grain_size),c);
+        (*kcenter)++;
+        c.i = i;
+        //fprintf(stderr,"** New center for i=%d\n",i);
+        tbb::parallel_reduce(tbb::blocked_range<int>(0,points->num,grain_size),c);
       }
     }
 
@@ -740,7 +739,7 @@ float pspeedy(Points *points, float z, long *kcenter, int pid, pthread_barrier_t
 #ifdef ENABLE_THREADS
   pthread_barrier_wait(barrier);
 #endif
-    
+
   if( pid != 0 ) { // we are not the master threads. we wait until a center is opened.
     while(1) {
 #ifdef ENABLE_THREADS
@@ -750,14 +749,14 @@ float pspeedy(Points *points, float z, long *kcenter, int pid, pthread_barrier_t
 #endif
       if( i >= points->num ) break;
       for( int k = k1; k < k2; k++ )
-	{
-	  float distance = dist(points->p[i],points->p[k],points->dim);
-	  if( distance*points->p[k].weight < points->p[k].cost )
-	    {
-	      points->p[k].cost = distance * points->p[k].weight;
-	      points->p[k].assign=i;
-	    }
-	}
+      {
+        float distance = dist(points->p[i],points->p[k],points->dim);
+        if( distance*points->p[k].weight < points->p[k].cost )
+        {
+          points->p[k].cost = distance * points->p[k].weight;
+          points->p[k].assign=i;
+        }
+      }
 #ifdef ENABLE_THREADS
       pthread_barrier_wait(barrier);
       pthread_barrier_wait(barrier);
@@ -768,28 +767,28 @@ float pspeedy(Points *points, float z, long *kcenter, int pid, pthread_barrier_t
     for(i = 1; i < points->num; i++ )  {
       bool to_open = ((float)lrand48()/(float)INT_MAX)<(points->p[i].cost/z);
       if( to_open )  {
-	(*kcenter)++;
+        (*kcenter)++;
 #ifdef ENABLE_THREADS
-	pthread_mutex_lock(&mutex);
+        pthread_mutex_lock(&mutex);
 #endif
-	open = true;
+        open = true;
 #ifdef ENABLE_THREADS
-	pthread_mutex_unlock(&mutex);
-	pthread_cond_broadcast(&cond);
+        pthread_mutex_unlock(&mutex);
+        pthread_cond_broadcast(&cond);
 #endif
-	for( int k = k1; k < k2; k++ )  {
-	  float distance = dist(points->p[i],points->p[k],points->dim);
-	  if( distance*points->p[k].weight < points->p[k].cost )  {
-	    points->p[k].cost = distance * points->p[k].weight;
-	    points->p[k].assign=i;
-	  }
-	}
+        for( int k = k1; k < k2; k++ )  {
+          float distance = dist(points->p[i],points->p[k],points->dim);
+          if( distance*points->p[k].weight < points->p[k].cost )  {
+            points->p[k].cost = distance * points->p[k].weight;
+            points->p[k].assign=i;
+          }
+        }
 #ifdef ENABLE_THREADS
-	pthread_barrier_wait(barrier);
+        pthread_barrier_wait(barrier);
 #endif
-	open = false;
+        open = false;
 #ifdef ENABLE_THREADS
-	pthread_barrier_wait(barrier);
+        pthread_barrier_wait(barrier);
 #endif
       }
     }
@@ -816,14 +815,14 @@ float pspeedy(Points *points, float z, long *kcenter, int pid, pthread_barrier_t
 #endif
   // aggregate costs from each thread
   if( pid == 0 )
+  {
+    totalcost=z*(*kcenter);
+    for( int i = 0; i < nproc; i++ )
     {
-      totalcost=z*(*kcenter);
-      for( int i = 0; i < nproc; i++ )
-	{
-	  totalcost += costs[i];
-	} 
-      free(costs);
-    }
+      totalcost += costs[i];
+    } 
+    free(costs);
+  }
 #ifdef ENABLE_THREADS
   pthread_barrier_wait(barrier);
 #endif
@@ -870,12 +869,12 @@ double pgain(long x, Points *points, double z, long int *numcenters)
     stride = cl * ( stride / cl + 1);
   }
   int K = stride -2 ; // K==*numcenters
-  
+
   //my own cost of opening x
   double cost_of_opening_x = 0;
 
   work_mem = (double*) calloc(stride*((NUM_DIVISIONS)+1),sizeof(double));
-  
+
   gl_cost_of_opening_x = 0;
   gl_number_of_centers_to_close = 0;
 
@@ -884,7 +883,7 @@ double pgain(long x, Points *points, double z, long int *numcenters)
     how much we will save by closing the center. 
     Each thread has its own copy of the *lower* fields as an array.
     We first build a table to index the positions of the *lower* fields. 
-  */
+    */
 
   /*****  loopA() *****/
   {
@@ -892,7 +891,7 @@ double pgain(long x, Points *points, double z, long int *numcenters)
     tbb::task::spawn_root_and_wait(t);
   }
 
-  
+
   {
     FixCenterTask &t = *new ( tbb::task::allocate_root() ) FixCenterTask(stride, points, work_mem);
     tbb::task::spawn_root_and_wait(t);
@@ -980,7 +979,7 @@ double pgain(long x, Points *points, double z, long int *numcenters, int pid, pt
     stride = cl * ( stride / cl + 1);
   }
   int K = stride -2 ; // K==*numcenters
-  
+
   //my own cost of opening x
   double cost_of_opening_x = 0;
 
@@ -997,7 +996,7 @@ double pgain(long x, Points *points, double z, long int *numcenters, int pid, pt
     how much we will save by closing the center. 
     Each thread has its own copy of the *lower* fields as an array.
     We first build a table to index the positions of the *lower* fields. 
-  */
+    */
 
   int count = 0;
   for( int i = k1; i < k2; i++ ) {
@@ -1038,7 +1037,7 @@ double pgain(long x, Points *points, double z, long int *numcenters, int pid, pt
 #ifdef ENABLE_THREADS
   pthread_barrier_wait(barrier);
 #endif
-  
+
   //my *lower* fields
   double* lower = &work_mem[pid*stride];
   //global *lower* fields
@@ -1054,7 +1053,7 @@ double pgain(long x, Points *points, double z, long int *numcenters, int pid, pt
       // point i would save cost just by switching to x
       // (note that i cannot be a median, 
       // or else dist(p[i], p[x]) would be 0)
-      
+
       switch_membership[i] = 1;
       cost_of_opening_x += x_cost - current_cost;
 
@@ -1084,16 +1083,16 @@ double pgain(long x, Points *points, double z, long int *numcenters, int pid, pt
       double low = z;
       //aggregate from all threads
       for( int p = 0; p < nproc; p++ ) {
-	low += work_mem[center_table[i]+p*stride];
+        low += work_mem[center_table[i]+p*stride];
       }
       gl_lower[center_table[i]] = low;
       if ( low > 0 ) {
-	// i is a median, and
-	// if we were to open x (which we still may not) we'd close i
+        // i is a median, and
+        // if we were to open x (which we still may not) we'd close i
 
-	// note, we'll ignore the following quantity unless we do open x
-	++number_of_centers_to_close;  
-	cost_of_opening_x -= low;
+        // note, we'll ignore the following quantity unless we do open x
+        ++number_of_centers_to_close;  
+        cost_of_opening_x -= low;
       }
     }
   }
@@ -1125,16 +1124,16 @@ double pgain(long x, Points *points, double z, long int *numcenters, int pid, pt
     for ( int i = k1; i < k2; i++ ) {
       bool close_center = gl_lower[center_table[points->p[i].assign]] > 0 ;
       if ( switch_membership[i] || close_center ) {
-	// Either i's median (which may be i itself) is closing,
-	// or i is closer to x than to its current median
-	points->p[i].cost = points->p[i].weight *
-	  dist(points->p[i], points->p[x], points->dim);
-	points->p[i].assign = x;
+        // Either i's median (which may be i itself) is closing,
+        // or i is closer to x than to its current median
+        points->p[i].cost = points->p[i].weight *
+          dist(points->p[i], points->p[x], points->dim);
+        points->p[i].assign = x;
       }
     }
     for( int i = k1; i < k2; i++ ) {
       if( is_center[i] && gl_lower[center_table[i]] > 0 ) {
-	is_center[i] = false;
+        is_center[i] = false;
       }
     }
     if( x >= k1 && x < k2 ) {
@@ -1176,7 +1175,7 @@ double pgain(long x, Points *points, double z, long int *numcenters, int pid, pt
 
 #ifdef TBB_VERSION
 float pFL(Points *points, int *feasible, int numfeasible,
-	  double z, long *k, double cost, long iter, double e)
+    double z, long *k, double cost, long iter, double e)
 {
 
   long i;
@@ -1207,9 +1206,9 @@ float pFL(Points *points, int *feasible, int numfeasible,
 
 
 #else //!TBB_VERSION
- float pFL(Points *points, int *feasible, int numfeasible,
-	  float z, long *k, double cost, long iter, float e, 
-	  int pid, pthread_barrier_t* barrier)
+float pFL(Points *points, int *feasible, int numfeasible,
+    float z, long *k, double cost, long iter, float e, 
+    int pid, pthread_barrier_t* barrier)
 {
 #ifdef ENABLE_THREADS
   pthread_barrier_wait(barrier);
@@ -1234,14 +1233,8 @@ float pFL(Points *points, int *feasible, int numfeasible,
     pthread_barrier_wait(barrier);
 #endif
     for (i=0;i<iter;i++) {
-
-      uint64_t stateID = caratGetStateWrapper((char*)"pFL", 1235);
-
       x = i%numfeasible;
       change += pgain(feasible[x], points, z, k, pid, barrier);
-
-      caratReportStateWrapper(stateID);
-
     }
     cost -= change;
 #ifdef ENABLE_THREADS
@@ -1265,7 +1258,7 @@ int selectfeasible_fast(Points *points, int **feasible, int kmin, int pid, pthre
   if (numfeasible > (ITER*kmin*log((double)kmin)))
     numfeasible = (int)(ITER*kmin*log((double)kmin));
   *feasible = (int *)malloc(numfeasible*sizeof(int));
-  
+
   float* accumweight;
   float totalweight;
 
@@ -1277,7 +1270,7 @@ int selectfeasible_fast(Points *points, int **feasible, int kmin, int pid, pthre
      by thread 0 for now ). 
      Note that when parallelized, the randomization might not be the same and it might
      not be difficult to measure the parallel speed-up for the whole program. 
-   */
+     */
   //  long bsize = numfeasible;
   long k1 = 0;
   long k2 = numfeasible;
@@ -1316,10 +1309,10 @@ int selectfeasible_fast(Points *points, int **feasible, int kmin, int pid, pthre
     while( l+1 < r ) {
       k = (l+r)/2;
       if( accumweight[k] > w ) {
-	r = k;
+        r = k;
       } 
       else {
-	l=k;
+        l=k;
       }
     }
     (*feasible)[i]=r;
@@ -1339,7 +1332,7 @@ int selectfeasible_fast(Points *points, int **feasible, int kmin, int pid, pthre
 #ifdef TBB_VERSION
 /* compute approximate kmedian on the points */
 float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
-	       int pid, pthread_barrier_t* barrier )
+    int pid, pthread_barrier_t* barrier )
 {
   int i;
   double cost;
@@ -1363,21 +1356,21 @@ float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
   long k2 = k1 + bsize;
   if( pid == nproc-1 ) k2 = points->num;
 
-  
+
   //fprintf(stderr,"Starting Kmedian procedure\n");
   //fprintf(stderr,"%i points in %i dimensions\n", numberOfPoints, ptDimension);
 
   int grain_size = points->num / ((NUM_DIVISIONS));
   if(grain_size==0)
+  {
+
+    for (long kk=0;kk < points->num; kk++ ) 
     {
-      
-      for (long kk=0;kk < points->num; kk++ ) 
-	{
-	  hiz += dist(points->p[kk], points->p[0],
-		      ptDimension)*points->p[kk].weight;
-	}
-      
+      hiz += dist(points->p[kk], points->p[0],
+          ptDimension)*points->p[kk].weight;
     }
+
+  }
   else {
     HizReduction h(points);
     tbb::parallel_reduce(tbb::blocked_range<int>(0,points->num, grain_size), h);
@@ -1389,22 +1382,22 @@ float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
   /* NEW: Check whether more centers than points! */
   if (points->num <= kmax) {
     /* just return all points as facilities */
-      for (long kk=0;kk<points->num;kk++) 
-	{
-	  points->p[kk].assign = kk;
-	  points->p[kk].cost = 0;
-	}
-    
+    for (long kk=0;kk<points->num;kk++) 
+    {
+      points->p[kk].assign = kk;
+      points->p[kk].cost = 0;
+    }
+
     cost = 0;
     *kfinal = k;
 
     return cost;
   }
 
-    shuffle(points);
-    cost = pspeedy(points, z, &k);
+  shuffle(points);
+  cost = pspeedy(points, z, &k);
 
-    i=0;
+  i=0;
 
   /* give speedy SP chances to get at least kmin/2 facilities */
   while ((k < kmin)&&(i<SP)) {
@@ -1415,8 +1408,8 @@ float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
   /* if still not enough facilities, assume z is too high */
   while (k < kmin) {
     if (i >= SP) 
-      {hiz=z; z=(hiz+loz)/2.0; i=0;}
-    
+    {hiz=z; z=(hiz+loz)/2.0; i=0;}
+
     shuffle(points);
     cost =  pspeedy(points, z, &k);
     i++;
@@ -1427,27 +1420,27 @@ float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
   /* this creates more consistancy between FL runs */
   /* helps to guarantee correct # of centers at the end */
 
-    numfeasible = selectfeasible_fast(points,&feasible,kmin);
-    for( int i = 0; i< points->num; i++ ) {
-      //fprintf(stderr,"\t-->is_center[%d]=true!\n",points->p[i].assign);
-      is_center[points->p[i].assign]= true;
-    }
+  numfeasible = selectfeasible_fast(points,&feasible,kmin);
+  for( int i = 0; i< points->num; i++ ) {
+    //fprintf(stderr,"\t-->is_center[%d]=true!\n",points->p[i].assign);
+    is_center[points->p[i].assign]= true;
+  }
 
 
   while(1) {
     /* first get a rough estimate on the FL solution */
     lastcost = cost;
     cost = pFL(points, feasible, numfeasible,
-	       z, &k, cost, (long)(ITER*kmax*log((double)kmax)), 0.1);
+        z, &k, cost, (long)(ITER*kmax*log((double)kmax)), 0.1);
 
     /* if number of centers seems good, try a more accurate FL */
     if (((k <= (1.1)*kmax)&&(k >= (0.9)*kmin))||
-	((k <= kmax+2)&&(k >= kmin-2))) {
-      
+        ((k <= kmax+2)&&(k >= kmin-2))) {
+
       /* may need to run a little longer here before halting without
-	 improvement */
+         improvement */
       cost = pFL(points, feasible, numfeasible,
-		 z, &k, cost, (long)(ITER*kmax*log((double)kmax)), 0.001);
+          z, &k, cost, (long)(ITER*kmax*log((double)kmax)), 0.001);
     }
 
     if (k > kmax) {
@@ -1466,9 +1459,9 @@ float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
     /* if k is good, return the result */
     /* if we're stuck, just give up and return what we have */
     if (((k <= kmax)&&(k >= kmin))||((loz >= (0.999)*hiz)) )
-      { 
-	break;
-      }
+    { 
+      break;
+    }
 
   }
 
@@ -1485,7 +1478,7 @@ float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
 
 /* compute approximate kmedian on the points */
 float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
-	       int pid, pthread_barrier_t* barrier )
+    int pid, pthread_barrier_t* barrier )
 {
   int i;
   double cost;
@@ -1515,7 +1508,7 @@ float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
   double myhiz = 0;
   for (long kk=k1;kk < k2; kk++ ) {
     myhiz += dist(points->p[kk], points->p[0],
-		      ptDimension)*points->p[kk].weight;
+        ptDimension)*points->p[kk].weight;
   }
   hizs[pid] = myhiz;
 
@@ -1565,14 +1558,14 @@ float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
   /* must designate some points as feasible centers */
   /* this creates more consistancy between FL runs */
   /* helps to guarantee correct # of centers at the end */
-  
+
   if( pid == 0 )
-    {
-      numfeasible = selectfeasible_fast(points,&feasible,kmin,pid,barrier);
-      for( int i = 0; i< points->num; i++ ) {
-	is_center[points->p[i].assign]= true;
-      }
+  {
+    numfeasible = selectfeasible_fast(points,&feasible,kmin,pid,barrier);
+    for( int i = 0; i< points->num; i++ ) {
+      is_center[points->p[i].assign]= true;
     }
+  }
 
 #ifdef ENABLE_THREADS
   pthread_barrier_wait(barrier);
@@ -1582,16 +1575,16 @@ float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
     /* first get a rough estimate on the FL solution */
     lastcost = cost;
     cost = pFL(points, feasible, numfeasible,
-	       z, &k, cost, (long)(ITER*kmax*log((double)kmax)), 0.1, pid, barrier);
+        z, &k, cost, (long)(ITER*kmax*log((double)kmax)), 0.1, pid, barrier);
 
     /* if number of centers seems good, try a more accurate FL */
     if (((k <= (1.1)*kmax)&&(k >= (0.9)*kmin))||
-	((k <= kmax+2)&&(k >= kmin-2))) {
+        ((k <= kmax+2)&&(k >= kmin-2))) {
 
       /* may need to run a little longer here before halting without
-	 improvement */
+         improvement */
       cost = pFL(points, feasible, numfeasible,
-		 z, &k, cost, (long)(ITER*kmax*log((double)kmax)), 0.001, pid, barrier);
+          z, &k, cost, (long)(ITER*kmax*log((double)kmax)), 0.001, pid, barrier);
     }
 
     if (k > kmax) {
@@ -1610,9 +1603,9 @@ float pkmedian(Points *points, long kmin, long kmax, long* kfinal,
     /* if k is good, return the result */
     /* if we're stuck, just give up and return what we have */
     if (((k <= kmax)&&(k >= kmin))||((loz >= (0.999)*hiz)) )
-      { 
-	break;
-      }
+    { 
+      break;
+    }
 #ifdef ENABLE_THREADS
     pthread_barrier_wait(barrier);
 #endif
@@ -1645,14 +1638,14 @@ int contcenters(Points *points)
       relweight=points->p[points->p[i].assign].weight + points->p[i].weight;
       relweight = points->p[i].weight/relweight;
       for (ii=0;ii<points->dim;ii++) {
-	points->p[points->p[i].assign].coord[ii]*=1.0-relweight;
-	points->p[points->p[i].assign].coord[ii]+=
-	  points->p[i].coord[ii]*relweight;
+        points->p[points->p[i].assign].coord[ii]*=1.0-relweight;
+        points->p[points->p[i].assign].coord[ii]+=
+          points->p[i].coord[ii]*relweight;
       }
       points->p[points->p[i].assign].weight += points->p[i].weight;
     }
   }
-  
+
   return 0;
 }
 
@@ -1717,105 +1710,105 @@ void localSearch( Points* points, long kmin, long kmax, long* kfinal ) {
 #else //!TBB_VERSION
 
 void localSearch( Points* points, long kmin, long kmax, long* kfinal ) {
-    pthread_barrier_t barrier;
-    pthread_t* threads = new pthread_t[nproc];
-    pkmedian_arg_t* arg = new pkmedian_arg_t[nproc];
+  pthread_barrier_t barrier;
+  pthread_t* threads = new pthread_t[nproc];
+  pkmedian_arg_t* arg = new pkmedian_arg_t[nproc];
 
 #ifdef ENABLE_THREADS
-    pthread_barrier_init(&barrier,NULL,nproc);
+  pthread_barrier_init(&barrier,NULL,nproc);
 #endif
-    for( int i = 0; i < nproc; i++ ) {
-      arg[i].points = points;
-      arg[i].kmin = kmin;
-      arg[i].kmax = kmax;
-      arg[i].pid = i;
-      arg[i].kfinal = kfinal;
+  for( int i = 0; i < nproc; i++ ) {
+    arg[i].points = points;
+    arg[i].kmin = kmin;
+    arg[i].kmax = kmax;
+    arg[i].pid = i;
+    arg[i].kfinal = kfinal;
 
-      arg[i].barrier = &barrier;
+    arg[i].barrier = &barrier;
 #ifdef ENABLE_THREADS
-      pthread_create(threads+i,NULL,localSearchSub,(void*)&arg[i]);
+    pthread_create(threads+i,NULL,localSearchSub,(void*)&arg[i]);
 #else
-      localSearchSub(&arg[0]);
+    localSearchSub(&arg[0]);
 #endif
-    }
+  }
 
 #ifdef ENABLE_THREADS
-    for ( int i = 0; i < nproc; i++) {
-      pthread_join(threads[i],NULL);
-    }
+  for ( int i = 0; i < nproc; i++) {
+    pthread_join(threads[i],NULL);
+  }
 #endif
 
-    delete[] threads;
-    delete[] arg;
+  delete[] threads;
+  delete[] arg;
 #ifdef ENABLE_THREADS
-    pthread_barrier_destroy(&barrier);
+  pthread_barrier_destroy(&barrier);
 #endif
 }
 #endif // TBB_VERSION
 
 
 class PStream {
-public:
-  virtual size_t read( float* dest, int dim, int num ) = 0;
-  virtual int ferror() = 0;
-  virtual int feof() = 0;
-  virtual ~PStream() {
-  }
+  public:
+    virtual size_t read( float* dest, int dim, int num ) = 0;
+    virtual int ferror() = 0;
+    virtual int feof() = 0;
+    virtual ~PStream() {
+    }
 };
 
 //synthetic stream
 class SimStream : public PStream {
-public:
-  SimStream(long n_ ) {
-    n = n_;
-  }
-  size_t read( float* dest, int dim, int num ) {
-    size_t count = 0;
-    for( int i = 0; i < num && n > 0; i++ ) {
-      for( int k = 0; k < dim; k++ ) {
-	dest[i*dim + k] = lrand48()/(float)INT_MAX;
-      }
-      n--;
-      count++;
+  public:
+    SimStream(long n_ ) {
+      n = n_;
     }
-    return count;
-  }
-  int ferror() {
-    return 0;
-  }
-  int feof() {
-    return n <= 0;
-  }
-  ~SimStream() { 
-  }
-private:
-  long n;
+    size_t read( float* dest, int dim, int num ) {
+      size_t count = 0;
+      for( int i = 0; i < num && n > 0; i++ ) {
+        for( int k = 0; k < dim; k++ ) {
+          dest[i*dim + k] = lrand48()/(float)INT_MAX;
+        }
+        n--;
+        count++;
+      }
+      return count;
+    }
+    int ferror() {
+      return 0;
+    }
+    int feof() {
+      return n <= 0;
+    }
+    ~SimStream() { 
+    }
+  private:
+    long n;
 };
 
 class FileStream : public PStream {
-public:
-  FileStream(char* filename) {
-    fp = fopen( filename, "rb");
-    if( fp == NULL ) {
-      fprintf(stderr,"error opening file %s\n.",filename);
-      exit(1);
+  public:
+    FileStream(char* filename) {
+      fp = fopen( filename, "rb");
+      if( fp == NULL ) {
+        fprintf(stderr,"error opening file %s\n.",filename);
+        exit(1);
+      }
     }
-  }
-  size_t read( float* dest, int dim, int num ) {
-    return std::fread(dest, sizeof(float)*dim, num, fp); 
-  }
-  int ferror() {
-    return std::ferror(fp);
-  }
-  int feof() {
-    return std::feof(fp);
-  }
-  ~FileStream() {
-    fprintf(stderr,"closing file stream\n");
-    fclose(fp);
-  }
-private:
-  FILE* fp;
+    size_t read( float* dest, int dim, int num ) {
+      return std::fread(dest, sizeof(float)*dim, num, fp); 
+    }
+    int ferror() {
+      return std::ferror(fp);
+    }
+    int feof() {
+      return std::feof(fp);
+    }
+    ~FileStream() {
+      fprintf(stderr,"closing file stream\n");
+      fclose(fp);
+    }
+  private:
+    FILE* fp;
 };
 
 void outcenterIDs( Points* centers, long* centerIDs, char* outfile ) {
@@ -1834,7 +1827,7 @@ void outcenterIDs( Points* centers, long* centerIDs, char* outfile ) {
       fprintf(fp, "%u\n", centerIDs[i]);
       fprintf(fp, "%lf\n", centers->p[i].weight);
       for( int k = 0; k < centers->dim; k++ ) {
-	fprintf(fp, "%lf ", centers->p[i].coord[k]);
+        fprintf(fp, "%lf ", centers->p[i].coord[k]);
       }
       fprintf(fp,"\n\n");
     }
@@ -1843,8 +1836,8 @@ void outcenterIDs( Points* centers, long* centerIDs, char* outfile ) {
 }
 
 void streamCluster( PStream* stream, 
-		    long kmin, long kmax, int dim,
-		    long chunksize, long centersize, char* outfile )
+    long kmin, long kmax, int dim,
+    long chunksize, long centersize, char* outfile )
 {
 
 #ifdef TBB_VERSION
@@ -1869,7 +1862,7 @@ void streamCluster( PStream* stream,
 #ifdef TBB_VERSION
     (Point *)memoryPoint.allocate(chunksize*sizeof(Point), NULL);
 #else
-    (Point *)malloc(chunksize*sizeof(Point));
+  (Point *)malloc(chunksize*sizeof(Point));
 #endif
 
   for( int i = 0; i < chunksize; i++ ) {
@@ -1882,7 +1875,7 @@ void streamCluster( PStream* stream,
 #ifdef TBB_VERSION
     (Point *)memoryPoint.allocate(centersize*sizeof(Point), NULL);
 #else
-    (Point *)malloc(centersize*sizeof(Point));
+  (Point *)malloc(centersize*sizeof(Point));
 #endif
   centers.num = 0;
 
@@ -1968,6 +1961,10 @@ void streamCluster( PStream* stream,
 
 int main(int argc, char **argv)
 {
+
+  uint64_t stateID = 0; // ED
+  stateID = caratGetStateWrapper((char*)"main", 1966); // ED
+
   char *outfilename = new char[MAXNAMESIZE];
   char *infilename = new char[MAXNAMESIZE];
   long kmin, kmax, n, chunksize, clustersize;
@@ -1976,11 +1973,11 @@ int main(int argc, char **argv)
 #ifdef PARSEC_VERSION
 #define __PARSEC_STRING(x) #x
 #define __PARSEC_XSTRING(x) __PARSEC_STRING(x)
-        fprintf(stderr,"PARSEC Benchmark Suite Version " __PARSEC_XSTRING(PARSEC_VERSION)"\n");
-	fflush(NULL);
+  fprintf(stderr,"PARSEC Benchmark Suite Version " __PARSEC_XSTRING(PARSEC_VERSION)"\n");
+  fflush(NULL);
 #else
-        fprintf(stderr,"PARSEC Benchmark Suite\n");
-	fflush(NULL);
+  fprintf(stderr,"PARSEC Benchmark Suite\n");
+  fflush(NULL);
 #endif //PARSEC_VERSION
 #ifdef ENABLE_PARSEC_HOOKS
   __parsec_bench_begin(__parsec_streamcluster);
@@ -1988,7 +1985,7 @@ int main(int argc, char **argv)
 
   if (argc<10) {
     fprintf(stderr,"usage: %s k1 k2 d n chunksize clustersize infile outfile nproc\n",
-	    argv[0]);
+        argv[0]);
     fprintf(stderr,"  k1:          Min. number of centers allowed\n");
     fprintf(stderr,"  k2:          Max. number of centers allowed\n");
     fprintf(stderr,"  d:           Dimension of each data point\n");
@@ -2047,6 +2044,9 @@ int main(int argc, char **argv)
 #ifdef ENABLE_PARSEC_HOOKS
   __parsec_bench_end();
 #endif
-  
+
+  caratReportStateWrapper(stateID); // ED
+  endStateInvocationWrapper(stateID); // ED
+
   return 0;
 }

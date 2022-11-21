@@ -32,8 +32,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#include "wrapper.hpp"
-
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
@@ -210,12 +208,8 @@ template <class T> void first_transform_FPTree_into_FPArray(FP_tree *fptree, T m
 	new_data_num[0][0] = sum_new_data_num;
 	T *ItemArray = (T *)local_buf->newbuf(1, new_data_num[0][0] * sizeof(T));
 
-  uint64_t stateID = 0;
-
 #pragma omp parallel for
 	for (j = 0; j < 2; j ++) {
-
-    stateID = caratGetStateWrapper("first_transform_FPTree_into_FPArray", 214);
 
 		int kept_itemiter;
 		int itemiter = content_offset_array[j] - 1;
@@ -290,11 +284,7 @@ template <class T> void first_transform_FPTree_into_FPArray(FP_tree *fptree, T m
 			}
 		}
 
-    caratReportStateWrapper(stateID);
-
 	}
-
-  endStateInvocationWrapper(stateID);
 
 	fptree->ItemArray = (int *) ItemArray;
 }

@@ -1,3 +1,4 @@
+#include "wrapper.hpp" // ED
 /*--------------------------------------------------------------------
 
   NAS Parallel Benchmarks 3.0 structured OpenMP C versions - MG
@@ -33,8 +34,8 @@ OpenMP C version: S. Satoh
 
 --------------------------------------------------------------------*/
 
-#include "wrapper.hpp"
 #include "npb-C.h"
+
 #include "globals.h"
 
 /* parameters */
@@ -75,6 +76,9 @@ static void nonzero(double ***z, int n1, int n2, int n3);
   c-------------------------------------------------------------------*/
 
 int main(int argc, char *argv[]) {
+
+  uint64_t stateID = 0; // ED
+  stateID = caratGetStateWrapper((char*)"main", 81); // ED
 
   /*-------------------------------------------------------------------------
     c k is the current level. It is passed down through subroutine args
@@ -328,6 +332,10 @@ int main(int argc, char *argv[]) {
       nit, nthreads, t, mflops, "          floating point", 
       verified, NPBVERSION, COMPILETIME,
       CS1, CS2, CS3, CS4, CS5, CS6, CS7);
+
+  caratReportStateWrapper(stateID); // ED
+  endStateInvocationWrapper(stateID); // ED
+
 }
 
 /*--------------------------------------------------------------------
@@ -451,10 +459,8 @@ static void psinv( double ***r, double ***u, int n1, int n2, int n3,
 
   int i3, i2, i1;
   double r1[M], r2[M];
-  uint64_t stateID; // ED
 #pragma omp parallel for default(shared) private(i1,i2,i3,r1,r2)   
   for (i3 = 1; i3 < n3-1; i3++) {
-    stateID = caratGetStateWrapper((char*)"psinv", 457); // ED
     for (i2 = 1; i2 < n2-1; i2++) {
       for (i1 = 0; i1 < n1; i1++) {
         r1[i1] = r[i3][i2-1][i1] + r[i3][i2+1][i1]
@@ -475,9 +481,7 @@ static void psinv( double ***r, double ***u, int n1, int n2, int n3,
           c-------------------------------------------------------------------*/
       }
     }
-    caratReportStateWrapper(stateID); // ED
   }
-  endStateInvocationWrapper(stateID); // ED
 
   /*--------------------------------------------------------------------
     c     exchange boundary points
@@ -517,10 +521,8 @@ static void resid( double ***u, double ***v, double ***r,
 
   int i3, i2, i1;
   double u1[M], u2[M];
-  uint64_t stateID; // ED
 #pragma omp parallel for default(shared) private(i1,i2,i3,u1,u2)
   for (i3 = 1; i3 < n3-1; i3++) {
-    stateID = caratGetStateWrapper((char*)"resid", 523); // ED
     for (i2 = 1; i2 < n2-1; i2++) {
       for (i1 = 0; i1 < n1; i1++) {
         u1[i1] = u[i3][i2-1][i1] + u[i3][i2+1][i1]
@@ -541,9 +543,7 @@ static void resid( double ***u, double ***v, double ***r,
           - a[3] * ( u2[i1-1] + u2[i1+1] );
       }
     }
-    caratReportStateWrapper(stateID); // ED
   }
-  endStateInvocationWrapper(stateID); // ED
 
   /*--------------------------------------------------------------------
     c     exchange boundary data
@@ -600,10 +600,8 @@ static void rprj3( double ***r, int m1k, int m2k, int m3k,
   } else {
     d3 = 1;
   }
-  uint64_t stateID; // ED
 #pragma omp parallel for default(shared) private(j1,j2,j3,i1,i2,i3,x1,y1,x2,y2)
   for (j3 = 1; j3 < m3j-1; j3++) {
-    stateID = caratGetStateWrapper((char*)"rprj3", 606); // ED
     i3 = 2*j3-d3;
     /*C        i3 = 2*j3-1*/
     for (j2 = 1; j2 < m2j-1; j2++) {
@@ -633,9 +631,7 @@ static void rprj3( double ***r, int m1k, int m2k, int m3k,
           + 0.0625 * ( y1[i1] + y1[i1+2] );
       }
     }
-    caratReportStateWrapper(stateID); // ED
   }
-  endStateInvocationWrapper(stateID); // ED
   comm3(s,m1j,m2j,m3j,k-1);
 
   if (debug_vec[0] >= 1 ) {
@@ -678,10 +674,8 @@ static void interp( double ***z, int mm1, int mm2, int mm3,
   double z1[M], z2[M], z3[M];
 
   if ( n1 != 3 && n2 != 3 && n3 != 3 ) {
-    uint64_t stateID; // ED
 #pragma omp parallel for default(shared) private(i1,i2,i3,z1,z2,z3)
     for (i3 = 0; i3 < mm3-1; i3++) {
-      stateID = caratGetStateWrapper((char*)"interp", 684); // ED
       for (i2 = 0; i2 < mm2-1; i2++) {
         for (i1 = 0; i1 < mm1; i1++) {
           z1[i1] = z[i3][i2+1][i1] + z[i3][i2][i1];
@@ -713,9 +707,7 @@ static void interp( double ***z, int mm1, int mm2, int mm3,
             +0.125*( z3[i1] + z3[i1+1] );
         }
       }
-      caratReportStateWrapper(stateID); // ED
     }
-    endStateInvocationWrapper(stateID); // ED
   } else {
     if (n1 == 3) {
       d1 = 2;
@@ -839,10 +831,8 @@ static void norm2u3(double ***r, int n1, int n2, int n3,
 
   n = nx*ny*nz;
 
-  uint64_t stateID; // ED
 #pragma omp parallel for default(shared) private(i1,i2,i3,a) reduction(+:s) reduction(max:tmp)
   for (i3 = 1; i3 < n3-1; i3++) {
-    stateID = caratGetStateWrapper((char*)"norm2u3", 845); // ED
     for (i2 = 1; i2 < n2-1; i2++) {
       for (i1 = 1; i1 < n1-1; i1++) {
         s = s + r[i3][i2][i1] * r[i3][i2][i1];
@@ -850,9 +840,7 @@ static void norm2u3(double ***r, int n1, int n2, int n3,
         if (a > tmp) tmp = a;
       }
     }
-    caratReportStateWrapper(stateID); // ED
   }
-  endStateInvocationWrapper(stateID); // ED
   *rnmu = tmp;
   *rnm2 = sqrt(s/(double)n);
 }
@@ -966,19 +954,15 @@ static void zran3(double ***z, int n1, int n2, int n3, int nx, int ny, int k) {
   x0 = X;
   rdummy = randlc( &x0, ai );
 
-  uint64_t stateIDa = 0; // ED
   for (i3 = 1; i3 < e3; i3++) {
     x1 = x0;
-    stateIDa = caratGetStateWrapper((char*)"zran3", 972); // ED
     for (i2 = 1; i2 < e2; i2++) {
       xx = x1;
       vranlc( d1, &xx, A, &(z[i3][i2][0]));
       rdummy = randlc( &x1, a1 );
     }
-    caratReportStateWrapper(stateIDa); // ED
     rdummy = randlc( &x0, a2 );
   }
-  endStateInvocationWrapper(stateIDa); // ED
 
   /*--------------------------------------------------------------------
     c       call comm3(z,n1,n2,n3)
@@ -1085,19 +1069,14 @@ static void zran3(double ***z, int n1, int n2, int n3, int nx, int ny, int k) {
         }
         printf("\n");*/
 
-  uint64_t stateID; // ED
 #pragma omp parallel for private(i2, i1)    
   for (i3 = 0; i3 < n3; i3++) {
-    stateID = caratGetStateWrapper((char*)"zran3", 1087); // ED
     for (i2 = 0; i2 < n2; i2++) {
       for (i1 = 0; i1 < n1; i1++) {
         z[i3][i2][i1] = 0.0;
       }
     }
-    caratReportStateWrapper(stateID); // ED
   }
-  endStateInvocationWrapper(stateID); // ED
-
   for (i = MM-1; i >= m0; i--) {
     z[j3[i][0]][j2[i][0]][j1[i][0]] = -1.0;
   }
@@ -1243,16 +1222,13 @@ static void zero3(double ***z, int n1, int n2, int n3) {
     c-------------------------------------------------------------------*/
 
   int i1, i2, i3;
-  uint64_t stateID; // ED
 #pragma omp parallel for private(i1,i2,i3)
   for (i3 = 0;i3 < n3; i3++) {
-    stateID = caratGetStateWrapper((char*)"zero3", 1245); // ED
     for (i2 = 0; i2 < n2; i2++) {
       for (i1 = 0; i1 < n1; i1++) {
         z[i3][i2][i1] = 0.0;
       }
     }
-    caratReportStateWrapper(stateID); // ED
   }
 }
 

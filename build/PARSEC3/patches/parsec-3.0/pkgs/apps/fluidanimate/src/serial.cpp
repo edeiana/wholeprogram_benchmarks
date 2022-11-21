@@ -997,6 +997,7 @@ void AdvanceFrame()
 
 int main(int argc, char *argv[])
 {
+  uint64_t stateID = caratGetStateWrapper((char*)"main", 1000);
 #ifdef PARSEC_VERSION
 #define __PARSEC_STRING(x) #x
 #define __PARSEC_XSTRING(x) __PARSEC_STRING(x)
@@ -1043,9 +1044,7 @@ int main(int argc, char *argv[])
   __parsec_roi_begin();
 #endif
   for(int i = 0; i < framenum; ++i){
-    uint64_t stateID = caratGetStateWrapper((char*)"main", 1046);
     AdvanceFrame();
-    caratReportStateWrapper(stateID);
   }
 #ifdef ENABLE_PARSEC_HOOKS
   __parsec_roi_end();
@@ -1063,6 +1062,9 @@ int main(int argc, char *argv[])
   __parsec_bench_end();
 #endif
 
+  caratReportStateWrapper(stateID);
+  endStateInvocationWrapper(stateID);
+ 
   return 0;
 }
 

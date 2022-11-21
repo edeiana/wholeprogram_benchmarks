@@ -1,3 +1,4 @@
+#include "wrapper.hpp" // ED
 /*--------------------------------------------------------------------
 
   NAS Parallel Benchmarks 3.0 structured OpenMP C versions - SP
@@ -30,7 +31,7 @@ OpenMP C version: S. Satoh
 3.0 structure translation: M. Popov 
 
 --------------------------------------------------------------------*/
-#include "wrapper.hpp"
+
 #include "npb-C.h"
 
 /* global variables */
@@ -64,6 +65,8 @@ static void z_solve(void);
   program SP
   c-------------------------------------------------------------------*/
 int main(int argc, char **argv) {
+  uint64_t stateID = 0; // ED
+  stateID = caratGetStateWrapper((char*)"main", 69); // ED
 
   int niter, step;
   double mflops, tmax;
@@ -167,6 +170,10 @@ int main(int argc, char **argv) {
       tmax, mflops, "          floating point", 
       verified, NPBVERSION, COMPILETIME, CS1, CS2, CS3, CS4, CS5, 
       CS6, "(none)");
+
+  caratReportStateWrapper(stateID); // ED
+  endStateInvocationWrapper(stateID); // ED
+
 }
 
 /*--------------------------------------------------------------------
@@ -181,10 +188,8 @@ static void add(void) {
   /*--------------------------------------------------------------------
     c addition of update to the vector u
     c-------------------------------------------------------------------*/
-  uint64_t stateID; // ED
 #pragma omp for
   for (m = 0; m < 5; m++) {
-    stateID = caratGetStateWrapper((char*)"add", 187); // ED
     for (i = 1; i <= grid_points[0]-2; i++) {
       for (j = 1; j <= grid_points[1]-2; j++) {
         for (k = 1; k <= grid_points[2]-2; k++) {
@@ -192,9 +197,7 @@ static void add(void) {
         }
       }
     }
-    caratReportStateWrapper(stateID); // ED
   }
-  endStateInvocationWrapper(stateID); // ED
 }
 
 /*--------------------------------------------------------------------
@@ -851,18 +854,14 @@ static void lhsinit(void) {
     c     zap the whole left hand side for starters
     c-------------------------------------------------------------------*/
   for (n = 0; n < 15; n++) {
-  uint64_t stateID; // ED
 #pragma omp for nowait
     for (i = 0; i < grid_points[0]; i++) {
-      stateID = caratGetStateWrapper((char*)"lhsinit", 857); // ED
       for (j = 0; j < grid_points[1]; j++) {
         for (k = 0; k < grid_points[2]; k++) {
           lhs[n][i][j][k] = 0.0;
         }
       }
-      caratReportStateWrapper(stateID); // ED
     }
-    endStateInvocationWrapper(stateID); // ED
   }
 #pragma omp barrier  
 
@@ -871,18 +870,14 @@ static void lhsinit(void) {
     c      convenient
     c-------------------------------------------------------------------*/
   for (n = 0; n < 3; n++) {
-  uint64_t stateID1; // ED
 #pragma omp for    
     for (i = 0; i < grid_points[0]; i++) {
-      stateID1 = caratGetStateWrapper((char*)"lhsinit", 877); // ED
       for (j = 0; j < grid_points[1]; j++) {
         for (k = 0; k < grid_points[2]; k++) {
           lhs[5*n+2][i][j][k] = 1.0;
         }
       }
-      caratReportStateWrapper(stateID1); // ED
     }
-    endStateInvocationWrapper(stateID1); // ED
   }
 }
 
@@ -906,32 +901,24 @@ static void lhsx(void) {
     c-------------------------------------------------------------------*/
   for (j = 1; j <= grid_points[1]-2; j++) {
     for (k = 1; k <= grid_points[2]-2; k++) {
-      uint64_t stateID; // ED
 #pragma omp for  
       for (i = 0; i <= grid_points[0]-1; i++) {
-        stateID = caratGetStateWrapper((char*)"lhsx", 912); // ED
         ru1 = c3c4*rho_i[i][j][k];
         cv[i] = us[i][j][k];
         rhon[i] = max(dx2+con43*ru1, 
             max(dx5+c1c5*ru1,
               max(dxmax+ru1,
                 dx1)));
-        caratReportStateWrapper(stateID); // ED
       }
-      endStateInvocationWrapper(stateID); // ED
 
 #pragma omp for  
-      uint64_t stateID1; // ED
       for (i = 1; i <= grid_points[0]-2; i++) {
-        stateID1 = caratGetStateWrapper((char*)"lhsx", 926); // ED
         lhs[0][i][j][k] =   0.0;
         lhs[1][i][j][k] = - dttx2 * cv[i-1] - dttx1 * rhon[i-1];
         lhs[2][i][j][k] =   1.0 + c2dttx1 * rhon[i];
         lhs[3][i][j][k] =   dttx2 * cv[i+1] - dttx1 * rhon[i+1];
         lhs[4][i][j][k] =   0.0;
-        caratReportStateWrapper(stateID1); // ED
       }
-      endStateInvocationWrapper(stateID1); // ED
     }
   }
 
@@ -940,10 +927,8 @@ static void lhsx(void) {
     c-------------------------------------------------------------------*/
 
   i = 1;
-  uint64_t stateID2; // ED
 #pragma omp for nowait
   for (j = 1; j <= grid_points[1]-2; j++) {
-    stateID2 = caratGetStateWrapper((char*)"lhsx", 945); // ED
     for (k = 1; k <= grid_points[2]-2; k++) {
       lhs[2][i][j][k] = lhs[2][i][j][k] + comz5;
       lhs[3][i][j][k] = lhs[3][i][j][k] - comz4;
@@ -953,14 +938,10 @@ static void lhsx(void) {
       lhs[3][i+1][j][k] = lhs[3][i+1][j][k] - comz4;
       lhs[4][i+1][j][k] = lhs[4][i+1][j][k] + comz1;
     }
-    caratReportStateWrapper(stateID2); // ED
   }
-  endStateInvocationWrapper(stateID2); // ED
 
-  uint64_t stateID3; // ED
 #pragma omp for nowait
   for (i = 3; i <= grid_points[0]-4; i++) {
-    stateID3 = caratGetStateWrapper((char*)"lhsx", 963); // ED
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
         lhs[0][i][j][k] = lhs[0][i][j][k] + comz1;
@@ -970,15 +951,11 @@ static void lhsx(void) {
         lhs[4][i][j][k] = lhs[4][i][j][k] + comz1;
       }
     }
-    caratReportStateWrapper(stateID3); // ED
   }
-  endStateInvocationWrapper(stateID3); // ED
 
   i = grid_points[0]-3;
-  uint64_t stateID4; // ED
 #pragma omp for  
   for (j = 1; j <= grid_points[1]-2; j++) {
-    stateID4 = caratGetStateWrapper((char*)"lhsx", 981); // ED
     for (k = 1; k <= grid_points[2]-2; k++) {
       lhs[0][i][j][k] = lhs[0][i][j][k] + comz1;
       lhs[1][i][j][k] = lhs[1][i][j][k] - comz4;
@@ -989,18 +966,14 @@ static void lhsx(void) {
       lhs[1][i+1][j][k] = lhs[1][i+1][j][k] - comz4;
       lhs[2][i+1][j][k] = lhs[2][i+1][j][k] + comz5;
     }
-    caratReportStateWrapper(stateID4); // ED
   }
-  endStateInvocationWrapper(stateID4); // ED
 
   /*--------------------------------------------------------------------
     c      subsequently, fill the other factors (u+c), (u-c) by adding to 
     c      the first  
     c-------------------------------------------------------------------*/
-  uint64_t stateID5; // ED
 #pragma omp for  
   for (i = 1; i <= grid_points[0]-2; i++) {
-    stateID5 = caratGetStateWrapper((char*)"lhsx", 1003); // ED
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
         lhs[0+5][i][j][k]  = lhs[0][i][j][k];
@@ -1019,9 +992,7 @@ static void lhsx(void) {
         lhs[4+10][i][j][k] = lhs[4][i][j][k];
       }
     }
-    caratReportStateWrapper(stateID5); // ED
   }
-  endStateInvocationWrapper(stateID5); // ED
 }
 
 /*--------------------------------------------------------------------
@@ -1267,10 +1238,8 @@ static void ninvr(void) {
 
   int i, j, k;
   double r1, r2, r3, r4, r5, t1, t2;
-  uint64_t stateID; // ED
 #pragma omp parallel for default(shared) private(i,j,k,r1,r2,r3,r4,r5,t1,t2)
   for (i = 1; i <= grid_points[0]-2; i++) {
-    stateID = caratGetStateWrapper((char*)"ninvr", 1237); // ED
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 
@@ -1290,9 +1259,7 @@ static void ninvr(void) {
         rhs[4][i][j][k] =  t1 + t2;
       }
     }
-    caratReportStateWrapper(stateID); // ED
   }
-  endStateInvocationWrapper(stateID); // ED
 }
 
 /*--------------------------------------------------------------------
@@ -1309,10 +1276,9 @@ static void pinvr(void) {
 
   int i, j, k;
   double r1, r2, r3, r4, r5, t1, t2;
-  uint64_t stateID; // ED
+
 #pragma omp parallel for default(shared) private(i,j,k,r1,r2,r3,r4,r5,t1,t2)
   for (i = 1; i <= grid_points[0]-2; i++) {
-    stateID = caratGetStateWrapper((char*)"pinvr", 1279); // ED
     for (j = 1; j <= grid_points[1]-2; j++) {
       for (k = 1; k <= grid_points[2]-2; k++) {
 
@@ -1332,9 +1298,7 @@ static void pinvr(void) {
         rhs[4][i][j][k] =  t1 + t2;
       }
     }
-    caratReportStateWrapper(stateID); // ED
   }
-  endStateInvocationWrapper(stateID); // ED
 }
 
 /*--------------------------------------------------------------------

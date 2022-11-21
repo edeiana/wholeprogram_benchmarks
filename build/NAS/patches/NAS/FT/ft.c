@@ -1,3 +1,4 @@
+#include "wrapper.hpp" // ED
 /*--------------------------------------------------------------------
 
   NAS Parallel Benchmarks 3.0 structured OpenMP C versions - FT
@@ -30,7 +31,7 @@ OpenMP C version: S. Satoh
 3.0 structure translation: M. Popov
 
 --------------------------------------------------------------------*/
-#include "wrapper.hpp" // ED
+
 #include "npb-C.h"
 
 /* global variables */
@@ -73,6 +74,9 @@ static void verify (int d1, int d2, int d3, int nt,
   c-------------------------------------------------------------------*/
 
 int main(int argc, char **argv) {
+  uint64_t stateID = 0; // ED
+  stateID = caratGetStateWrapper((char*)"main", 78); // ED
+
 
   /*c-------------------------------------------------------------------
     c-------------------------------------------------------------------*/
@@ -217,6 +221,10 @@ int main(int argc, char **argv) {
       NPBVERSION, COMPILETIME,
       CS1, CS2, CS3, CS4, CS5, CS6, CS7);
   if (TIMERS_ENABLED == TRUE) print_timers();
+
+  caratReportStateWrapper(stateID); // ED
+  endStateInvocationWrapper(stateID); // ED
+
 }
 
 /*--------------------------------------------------------------------
@@ -234,18 +242,14 @@ static void evolve(dcomplex u0[NZ][NY][NX], dcomplex u1[NZ][NY][NX],
 
   int i, j, k;
 
-  uint64_t stateID = 0; // ED
 #pragma omp parallel for default(shared) private(i,j,k)   
   for (k = 0; k < d[2]; k++) {
-    stateID = caratGetStateWrapper((char*)"evolve", 240); // ED
     for (j = 0; j < d[1]; j++) {
       for (i = 0; i < d[0]; i++) {
         crmul(u1[k][j][i], u0[k][j][i], ex[t*indexmap[k][j][i]]);
       }
     }
-    caratReportStateWrapper(stateID);
   }
-  endStateInvocationWrapper(stateID);
 }
 
 /*--------------------------------------------------------------------
@@ -417,10 +421,8 @@ static void compute_indexmap(int indexmap[NZ][NY][NX], int d[3]) {
     c mod(i-1+n/2, n) - n/2
     c-------------------------------------------------------------------*/
 
-  uint64_t stateID = 0; // ED
 #pragma omp parallel for default(shared) private(i,j,k,ii,ii2,jj,ij2,kk)    
   for (i = 0; i < dims[2][0]; i++) {
-    stateID = caratGetStateWrapper((char*)"compute_indexmap", 423); // ED
     ii =  (i+1+xstart[2]-2+NX/2)%NX - NX/2;
     ii2 = ii*ii;
     for (j = 0; j < dims[2][1]; j++) {
@@ -431,9 +433,7 @@ static void compute_indexmap(int indexmap[NZ][NY][NX], int d[3]) {
         indexmap[k][j][i] = kk*kk+ij2;
       }
     }
-    caratReportStateWrapper(stateID);
   }
-  endStateInvocationWrapper(stateID);
 
   /*--------------------------------------------------------------------
     c compute array of exponentials for time evolution. 
@@ -526,13 +526,8 @@ static void cffts1(int is, int d[3], dcomplex x[NZ][NY][NX],
     dcomplex y0[NX][FFTBLOCKPAD];
     dcomplex y1[NX][FFTBLOCKPAD];
 
-    uint64_t stateID;
-
 #pragma omp for 	
     for (k = 0; k < d[2]; k++) {
-
-      stateID = caratGetStateWrapper((char*)"cffts1", 534); // ED
-
       for (jj = 0; jj <= d[1] - fftblock; jj+=fftblock) {
         /*          if (TIMERS_ENABLED == TRUE) timer_start(T_FFTCOPY); */
         for (j = 0; j < fftblock; j++) {
@@ -559,13 +554,7 @@ static void cffts1(int is, int d[3], dcomplex x[NZ][NY][NX],
         }
         /*          if (TIMERS_ENABLED == TRUE) timer_stop(T_FFTCOPY); */
       }
-
-      caratReportStateWrapper(stateID);
-
     }
-
-    endStateInvocationWrapper(stateID);
-
   }
 }
 
@@ -591,13 +580,8 @@ static void cffts2(int is, int d[3], dcomplex x[NZ][NY][NX],
     dcomplex y0[NX][FFTBLOCKPAD];
     dcomplex y1[NX][FFTBLOCKPAD];
 
-    uint64_t stateID;
-
 #pragma omp for 	
     for (k = 0; k < d[2]; k++) {
-
-      stateID = caratGetStateWrapper((char*)"cffts2", 599); // ED
-
       for (ii = 0; ii <= d[0] - fftblock; ii+=fftblock) {
         /*	    if (TIMERS_ENABLED == TRUE) timer_start(T_FFTCOPY); */
         for (j = 0; j < d[1]; j++) {
@@ -621,13 +605,7 @@ static void cffts2(int is, int d[3], dcomplex x[NZ][NY][NX],
         }
         /*           if (TIMERS_ENABLED == TRUE) timer_stop(T_FFTCOPY); */
       }
-
-      caratReportStateWrapper(stateID);
-
     }
-
-    endStateInvocationWrapper(stateID);
-
   }
 }
 /*--------------------------------------------------------------------
@@ -652,13 +630,8 @@ static void cffts3(int is, int d[3], dcomplex x[NZ][NY][NX],
     dcomplex y0[NX][FFTBLOCKPAD];
     dcomplex y1[NX][FFTBLOCKPAD];
 
-    uint64_t stateID;
-
 #pragma omp for 	
     for (j = 0; j < d[1]; j++) {
-
-      stateID = caratGetStateWrapper((char*)"cffts3", 660); // ED
-
       for (ii = 0; ii <= d[0] - fftblock; ii+=fftblock) {
         /*	    if (TIMERS_ENABLED == TRUE) timer_start(T_FFTCOPY); */
         for (k = 0; k < d[2]; k++) {
@@ -682,13 +655,7 @@ static void cffts3(int is, int d[3], dcomplex x[NZ][NY][NX],
         }
         /*           if (TIMERS_ENABLED == TRUE) timer_stop(T_FFTCOPY); */
       }
-
-      caratReportStateWrapper(stateID);
-
     }
-
-    endStateInvocationWrapper(stateID);
-
   }
 }
 
@@ -891,6 +858,7 @@ static void checksum(int i, dcomplex u1[NZ][NY][NX], int d[3]) {
 
 #pragma omp parallel default(shared) 
   {
+
     /*--------------------------------------------------------------------
       c-------------------------------------------------------------------*/
 
@@ -900,10 +868,9 @@ static void checksum(int i, dcomplex u1[NZ][NY][NX], int d[3]) {
     chk.real = 0.0;
     chk.imag = 0.0;
 
-    uint64_t stateID = 0; // ED
+
 #pragma omp for nowait
     for (j = 1; j <= 1024; j++) {
-      stateID = caratGetStateWrapper((char*)"checksum", 906); // ED
       q = j%NX+1;
       if (q >= xstart[0] && q <= xend[0]) {
         r = (3*j)%NY+1;
@@ -914,9 +881,7 @@ static void checksum(int i, dcomplex u1[NZ][NY][NX], int d[3]) {
           }
         }
       }
-      caratReportStateWrapper(stateID);
     }
-    endStateInvocationWrapper(stateID);
 #pragma omp critical
     {
       sums[i].real += chk.real;

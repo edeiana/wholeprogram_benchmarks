@@ -1,3 +1,4 @@
+#include "wrapper.hpp"
 /*
    Author:  Jianfei Zhu  
             Concordia University
@@ -103,6 +104,7 @@ void printLen()
 
 int main(int argc, char **argv)
 {
+  uint64_t stateID = caratGetStateWrapper((char*)"main", 106);
 	double tstart, tdatap, tend;
 	int workingthread=omp_get_max_threads();
 	int i;
@@ -204,6 +206,9 @@ int main(int argc, char **argv)
 #ifdef ENABLE_PARSEC_HOOKS
 	__parsec_bench_end();
 #endif
-	
+
+	caratReportStateWrapper(stateID);
+  endStateInvocationWrapper(stateID);
+ 
 	return 0;
 }

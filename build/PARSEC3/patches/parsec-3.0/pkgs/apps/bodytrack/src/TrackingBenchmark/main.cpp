@@ -23,7 +23,7 @@
 //  modified : 
 //--------------------------------------------------------------
 
-//#include "wrapper.hpp"
+#include "wrapper.hpp" // ED
 
 #if defined(HAVE_CONFIG_H)
 # include "config.h"
@@ -349,10 +349,12 @@ int mainSingleThread(string path, int cameras, int frames, int particles, int la
 #if defined(ENABLE_PARSEC_HOOKS)
         __parsec_roi_begin();
 #endif
+  uint64_t stateID = 0; // ED
 	for(int i = 0; i < frames; i++)														//process each set of frames
-	{	cout << "Processing frame " << i << endl;
+	{
+    stateID = caratGetStateWrapper((char*) "mainSingleThread", 355); // ED
 
-    //uint64_t stateID = caratGetStateWrapper((char*) "main", 0);
+    cout << "Processing frame " << i << endl;
 
 		if(!pf.Update((float)i))														//Run particle filter step
 		{	cout << "Error loading observation data" << endl;
@@ -363,9 +365,11 @@ int mainSingleThread(string path, int cameras, int frames, int particles, int la
 		if(OutputBMP)
 			pf.Model().OutputBMP(estimate, i);											//save output bitmap file
 
-    //caratReportStateWrapper(stateID);
-
+    caratReportStateWrapper(stateID); // ED
 	}
+
+  endStateInvocationWrapper(stateID); // ED
+
 #if defined(ENABLE_PARSEC_HOOKS)
         __parsec_roi_end();
 #endif
