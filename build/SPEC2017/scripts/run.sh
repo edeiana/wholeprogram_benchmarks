@@ -2,6 +2,8 @@
 
 
 function runBenchmark {
+  timeFile=`mktemp` ;
+
 	if [ ! -d "${BENCHMARKS_DIR}/${1}/${inputsize}" ]; then
 		echo "Error: Run directory not found for \"${1}\". Please run \"./scripts/setup.sh ${inputsize} version\" where version = [rate, speed]"
 		exit
@@ -24,12 +26,15 @@ function runBenchmark {
   rm -f ${stderrFile} ;
   rm -f ${stdoutFile} ;
   cmdToRunSplit="memorytool-run ./$1 ${arguments}" ;
-  cmd="eval perf stat ${cmdToRunSplit}" ;
+  cmd="eval /usr/bin/time -f %e -o ${timeFile} ${cmdToRunSplit}" ;
   ${cmd} 1> >(tee -a ${stdoutFile}) 2> >(tee -a ${stderrFile} >&2) > ${perfStatFile} ;
 
   exitOutput=$? ;
   echo `tail -n 1 ${perfStatFile}` ;
 	echo "--------------------------------------------------------------------------------------"
+  
+  echo `tail -n 1 ${timeFile}` ;
+  rm ${timeFile} ;
 }
 
 
@@ -90,5 +95,4 @@ else
 fi
 
 
-echo "DONE" 
 exit $exitOutput 

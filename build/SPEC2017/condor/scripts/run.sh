@@ -26,15 +26,16 @@ for i in `seq 1 $numRuns` ; do
   fi
 
   # Collect the time
-  baselineTime=`awk '{
-      if (  ($2 == "seconds") &&
-            ($3 == "time")    &&
-            ($4 == "elapsed") ){
-        print $1 ;
-      }
-    }' ${tempFile}` ;
+  #baselineTime=`awk '{
+  #    if (  ($2 == "seconds") &&
+  #          ($3 == "time")    &&
+  #          ($4 == "elapsed") ){
+  #      print $1 ;
+  #    }
+  #  }' ${tempFile}` ;
 
   # Append the time
+  baselineTime="`tail -n 1 ${tempFile}`" ;
   echo "$baselineTime" >> ${outputFile} ;
 
 done
