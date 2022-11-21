@@ -4,6 +4,7 @@ function runBenchmark {
   # Get function args
   inputArg="${1}" ;
   benchmarkArg="${2}" ;
+  timeFile=`mktemp` ;
 
   # Check if paths exists
   pathToBenchmark="${benchmarksDir}/${benchmarkArg}" ;
@@ -52,7 +53,7 @@ function runBenchmark {
   perfStatFile="${pathToBenchmark}/${benchmarkArg}_${inputArg}_output.txt" ;
   commandToRunSplit="./${benchmarkArg} ${run_args}" ;
   echo "Running: ${commandToRunSplit} in ${PWD}" ;
-  eval perf stat ${commandToRunSplit} > ${perfStatFile} ;
+  eval /usr/bin/time -f %e -o ${timeFile} ${commandToRunSplit} > ${perfStatFile} ;
   if [ "$?" != 0 ] ; then
     echo "ERROR: run of ${commandToRunSplit} failed." ;
     exit 1 ;
@@ -61,6 +62,9 @@ function runBenchmark {
   # Print last line of perf stat output file
   echo `tail -n 1 ${perfStatFile}` ;
 	echo "--------------------------------------------------------------------------------------" ;
+
+  echo `tail -n 1 ${timeFile}` ;
+  rm ${timeFile} ;
 
   return ;
 }
@@ -88,5 +92,4 @@ else
   runBenchmark ${inputToRun} ${benchmarkToRun} ;
 fi
 
-echo "DONE" 
 exit
