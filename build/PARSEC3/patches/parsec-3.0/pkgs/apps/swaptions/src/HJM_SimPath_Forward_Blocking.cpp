@@ -1,3 +1,5 @@
+//#include "wrapper.hpp"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -143,6 +145,8 @@ int HJM_SimPath_Forward_Blocking(FTYPE **ppdHJMPath,	//Matrix that stores genera
 	// Generation of HJM Path1
 	for(int b=0; b<BLOCKSIZE; b++){ // b is the blocks
 
+    //uint64_t stateID = caratGetStateWrapper("HJM_SimPath_Forward_Blocking", 146);
+
 	  for (j=1;j<=iN-1;++j) {// j is the timestep
 	    
 	    for (l=0;l<=iN-(j+1);++l){ // l is the future steps
@@ -156,6 +160,8 @@ int HJM_SimPath_Forward_Blocking(FTYPE **ppdHJMPath,	//Matrix that stores genera
 	      //as per formula
 	    }
 	  }
+
+    //caratReportStateWrapper(stateID);
 
 	} // end Blocks
 	// -----------------------------------------------------

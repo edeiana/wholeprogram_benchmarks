@@ -134,8 +134,6 @@ void print_usage(char *name) {
 
 int main(int argc, char *argv[])
 {
-  uint64_t stateID = caratGetStateWrapper((char*)"main", 320);
-
 	int iSuccess = 0;
 	int i,j;
 	
@@ -308,9 +306,13 @@ int main(int argc, char *argv[])
 #endif // TBB_VERSION	
 
 #else
+  uint64_t stateID = 0;
   for (auto threadID = 0; threadID < nThreads; ++threadID){
+    stateID = caratGetStateWrapper("main",316);
 	  worker(&threadID);
+    caratReportStateWrapper(stateID);
   }
+  endStateInvocationWrapper(stateID);
 #endif //ENABLE_THREADS
 
 #ifdef ENABLE_PARSEC_HOOKS
@@ -341,8 +343,5 @@ int main(int argc, char *argv[])
 	__parsec_bench_end();
 #endif
 
-  caratReportStateWrapper(stateID);
-  endStateInvocationWrapper(stateID);
- 
 	return iSuccess;
 }
