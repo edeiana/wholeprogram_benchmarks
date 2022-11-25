@@ -216,7 +216,7 @@ template <class T> void first_transform_FPTree_into_FPArray(FP_tree *fptree, T m
 //#pragma omp parallel for
 	for (j = 0; j < workingthread; j ++) {
 
-    stateID = caratGetStateWrapper("first_transform_FPTree_into_FPArray", 214);
+    stateID = caratGetStateWrapper("first_transform_FPTree_into_FPArray", 219);
 
 		int kept_itemiter;
 		int itemiter = content_offset_array[j] - 1;
@@ -1355,9 +1355,14 @@ int FP_tree::FP_growth_first(FSout* fout)
 			}
 		}
 
+    uint64_t stateID = 0;
+
 		#pragma omp parallel for schedule(dynamic,1)
 		for(sequence=upperbound - 1; sequence>=lowerbound; sequence--)
 		{
+
+      stateID = caratGetStateWrapper("FP_growth_first", 1364);
+
       int current, new_item_no, listlen;
 			int MC2=0;			
 			unsigned int MR2=0;	
@@ -1437,7 +1442,12 @@ int FP_tree::FP_growth_first(FSout* fout)
 				local_list->top = listlen-1;
 			}
 			release_node_array_after_mining(sequence, thread, workingthread);
+
+      caratReportStateWrapper(stateID);
+
 		}
+
+    endStateInvocationWrapper(stateID);
 	}
 	 wtime(&tend);
 //	 printf("the major FP_growth cost %f vs %f seconds\n", tend - tstart, temp_time - tstart);
