@@ -117,7 +117,7 @@ char * memory::newbuf(unsigned int num,unsigned int size)
 	for(pos=markcount; pos < bufcount; pos++)
 		if (rest[pos] >= i) break;
 	
-  std::cerr << "pos = " << pos << " length of rest = " << bufcount << "\n";
+  //std::cerr << "pos = " << pos << " length of rest = " << bufcount << "\n";
 
   auto tmp = rest[pos];
 

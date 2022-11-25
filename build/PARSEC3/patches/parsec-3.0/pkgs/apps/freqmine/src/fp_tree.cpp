@@ -185,7 +185,8 @@ template <class T> void first_transform_FPTree_into_FPArray(FP_tree *fptree, T m
 	fptree->MB_nodes = (char**) local_buf->newbuf(1, fptree->itemno * (sizeof(int*) + sizeof(int) * 2));
 	fptree->MC_nodes = (int*)(fptree->MB_nodes + fptree->itemno);
 	fptree->MR_nodes = (unsigned int*)fptree->MC_nodes + fptree->itemno;
-	int workingthread = omp_get_max_threads();	
+  //int workingthread = omp_get_max_threads();	
+	int workingthread = 1;	
 	int *content_offset_array = new int [workingthread];
 
 	for (j = 0; j < workingthread; j ++) {
@@ -212,8 +213,8 @@ template <class T> void first_transform_FPTree_into_FPArray(FP_tree *fptree, T m
 
   uint64_t stateID = 0;
 
-#pragma omp parallel for
-	for (j = 0; j < 2; j ++) {
+//#pragma omp parallel for
+	for (j = 0; j < workingthread; j ++) {
 
     stateID = caratGetStateWrapper("first_transform_FPTree_into_FPArray", 214);
 
