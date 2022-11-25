@@ -529,7 +529,7 @@ void FP_tree::database_tiling(int workingthread)
 		for (j = local_num_hot_item; j < local_itemno; j ++)
 			origin[i][j] = 1;
 	}
-#pragma omp parallel for schedule(dynamic,1)
+//#pragma omp parallel for schedule(dynamic,1)
 	for (i = 0; i < mapfile->tablesize; i ++) {
 		int k, l;
 		int *content;
@@ -713,7 +713,7 @@ void FP_tree::database_tiling(int workingthread)
 			}
 		}
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (i = 0; i < workingthread; i ++) {
 		MapFileNode *current_mapfilenode;
 		unsigned short * content;
@@ -865,7 +865,7 @@ void FP_tree::scan1_DB(Data* fdat)
 			hot_node_index[i] = j;
 	}
 	hot_node_depth[0] = 0;
-	#pragma omp parallel for
+//	#pragma omp parallel for
 	for (int k = 0; k < workingthread; k ++) {
 		int i;
 #ifdef __linux__
@@ -1049,7 +1049,7 @@ void FP_tree::scan2_DB(int workingthread)
 	wtime(&tstart);
 	database_tiling(workingthread);
 	Fnode **local_hashtable = hashtable[0];
-#pragma omp parallel for schedule(dynamic,1)
+//#pragma omp parallel for schedule(dynamic,1)
 	for (j = 0; j < mergedworknum; j ++) {
 		int thread = omp_get_thread_num();
 		int localthreadworkloadnum = threadworkloadnum[thread];
@@ -1163,7 +1163,7 @@ void FP_tree::scan2_DB(int workingthread)
 	}
 	int totalnodes = cal_level_25(0);
 	
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (j = 0; j < workingthread; j ++) {
 		int local_rightsib_backpatch_count = rightsib_backpatch_count[j][0];
 		Fnode ***local_rightsib_backpatch_stack = rightsib_backpatch_stack[j];
