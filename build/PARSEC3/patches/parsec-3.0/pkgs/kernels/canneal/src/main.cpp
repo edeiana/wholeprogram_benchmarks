@@ -105,7 +105,8 @@ int main (int argc, char * const argv[]) {
 	//now that we've read in the commandline, run the program
 	netlist my_netlist(filename);
 	
-	annealer_thread a_thread(&my_netlist,num_threads,swaps_per_temp,start_temp,number_temp_steps);
+	//annealer_thread a_thread(&my_netlist,num_threads,swaps_per_temp,start_temp,number_temp_steps);
+	annealer_thread *a_thread = new annealer_thread(&my_netlist,num_threads,swaps_per_temp,start_temp,number_temp_steps);
 	
 #ifdef ENABLE_PARSEC_HOOKS
 	__parsec_roi_begin();
@@ -122,10 +123,10 @@ int main (int argc, char * const argv[]) {
 #else
   omp_set_dynamic(0);     // Explicitly disable dynamic teams
   omp_set_num_threads(num_threads); // Use nThreads for all consecutive parallel regions
-  #pragma omp parallel for schedule(static, 1) 
-	for(int i=0; i<num_threads; i++){
-	  a_thread.Run();
-	}
+  #pragma omp parallel for
+  for (int i = 0; i < num_threads; ++i){
+	  a_thread->Run();
+  }
 #endif
 #ifdef ENABLE_PARSEC_HOOKS
 	__parsec_roi_end();
